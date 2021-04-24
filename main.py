@@ -6,7 +6,7 @@ from thermography.detection import FramePreprocessor
 from thermography.detection import EdgeDetector, SegmentDetector, SegmentClusterer, IntersectionDetector, \
     RectangleDetector, EdgeDetectorParams
 
-image_path = "data/thermal/TEMP_DJI_2_R (814).JPG"
+image_path = "data/raw/sample.JPG"
 
 img = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
@@ -107,17 +107,17 @@ plt.title('preprocessed'), plt.xticks([]), plt.yticks([])
 plt.subplot(122), plt.imshow(edge_image)
 plt.title('edge_image'), plt.xticks([]), plt.yticks([])
 plt.show()
-segement_image = detect_segments_funcitonal(edge_image)
-from display import draw_segments, draw_rectangles
-
-
-cluster_list = cluster_segments_funcitonal(segement_image)
-
+# segement_image = detect_segments_funcitonal(edge_image)
+#
+# from display import draw_segments, draw_rectangles
+#
+# cluster_list = cluster_segments_funcitonal(segement_image)
+#
 # draw_segments(cluster_list, preprocessed, "Segments")
-intersections = detect_intersections_funcitonal(cluster_list)
-rectanbles = detect_rectangles_funcitonal(intersections)
-
-draw_rectangles(rectanbles, img, "Rectangles")
+# intersections = detect_intersections_funcitonal(cluster_list)
+# rectanbles = detect_rectangles_funcitonal(intersections)
+#
+# draw_rectangles(rectanbles, img, "Rectangles")
 # plt.subplot(133), plt.imshow(segement_image)
 # plt.title('segement_image'), plt.xticks([]), plt.yticks([])
 

@@ -17,8 +17,8 @@ class EdgeDetectorParams:
         """
         sigma = 0.33
         v = np.median(img)
-        self.hysteresis_min_thresh = int(max(0, (1.0 - sigma) * v))
-        self.hysteresis_max_thresh = int(min(255, (1.0 + sigma) * v))
+        self.hysteresis_min_thresh = 50
+        self.hysteresis_max_thresh = 100
 
         self.kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
         self.dilation_steps = 4
