@@ -6,15 +6,7 @@ from thermography.detection import FramePreprocessor
 from thermography.detection import EdgeDetector, SegmentDetector, SegmentClusterer, IntersectionDetector, \
     RectangleDetector, EdgeDetectorParams
 
-image_path = "data/raw/sample.JPG"
-
-img = cv2.imread(image_path, cv2.IMREAD_COLOR)
-
-distorted_image = img
-if False:
-    undistorted_image = cv2.undistort(src=distorted_image)
-else:
-    undistorted_image = distorted_image
+from display import draw_segments, draw_rectangles, draw_intersections
 
 
 def preprocess_frame_funcitonal(frame, imgs_show=False) -> None:
@@ -43,7 +35,7 @@ def preprocess_frame_funcitonal(frame, imgs_show=False) -> None:
 
         plt.show()
 
-    return last_preprocessed_image
+    return last_preprocessed_image, last_scaled_frame_rgb
 
 
 def detect_edges_funcitonal(img) -> None:
@@ -99,29 +91,34 @@ def detect_rectangles_funcitonal(intersections) -> None:
     last_rectangles = rectangle_detector.rectangles
     return last_rectangles
 
+image_path = "data/raw/sample.JPG"
 
-preprocessed = preprocess_frame_funcitonal(img)
+img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+preprocessed, last_rgb = preprocess_frame_funcitonal(img)
 edge_image = detect_edges_funcitonal(preprocessed)
-plt.subplot(121), plt.imshow(preprocessed)
-plt.title('preprocessed'), plt.xticks([]), plt.yticks([])
-plt.subplot(122), plt.imshow(edge_image)
-plt.title('edge_image'), plt.xticks([]), plt.yticks([])
-plt.show()
-# segement_image = detect_segments_funcitonal(edge_image)
-#
-# from display import draw_segments, draw_rectangles
-#
-# cluster_list = cluster_segments_funcitonal(segement_image)
-#
-# draw_segments(cluster_list, preprocessed, "Segments")
-# intersections = detect_intersections_funcitonal(cluster_list)
-# rectanbles = detect_rectangles_funcitonal(intersections)
-#
-# draw_rectangles(rectanbles, img, "Rectangles")
-# plt.subplot(133), plt.imshow(segement_image)
-# plt.title('segement_image'), plt.xticks([]), plt.yticks([])
+segement_image = detect_segments_funcitonal(edge_image)
+cluster_list = cluster_segments_funcitonal(segement_image)
 
+# cv2.imshow('edge', edge_image)
+# cv2.waitKey()
 
-# self.detect_edges()
-# self.detect_segments()
+draw_segments(cluster_list, preprocessed, "Segments")
+
+# cv2.imshow('segments', edge_image)
 cv2.waitKey()
+
+intersections = detect_intersections_funcitonal(cluster_list)
+rectanbles = detect_rectangles_funcitonal(intersections)
+draw_rectangles(rectanbles, last_rgb, "Rectangles")
+
+cv2.waitKey()
+
+# import flirimageextractor
+# from matplotlib import cm
+#
+# flir = flirimageextractor.FlirImageExtractor(palettes=[cm.jet, cm.bwr, cm.gist_ncar])
+# flir.process_image('data/raw/sample.JPG')
+# flir.save_images()
+# flir.plot()

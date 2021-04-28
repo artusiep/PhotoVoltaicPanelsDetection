@@ -17,9 +17,9 @@ class RectangleDetectorParams:
         :ivar min_area: Minimal surface of detected rectangles. Smaller rectangles are rejected.
         """
         self.aspect_ratio = 1.5
-        self.aspect_ratio_relative_deviation = 0.35
+        self.aspect_ratio_relative_deviation = 0.5
 
-        self.min_area = 20 * 40
+        self.min_area = 0
 
 
 class RectangleDetector:

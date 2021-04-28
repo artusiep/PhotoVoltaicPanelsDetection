@@ -76,22 +76,3 @@ class EdgeDetector:
                 done = True
 
         self.edge_image = skel
-
-
-image_path = "data/thermal/TEMP_DJI_4_R(596).JPG"
-
-img = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
-gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-edge_detector = EdgeDetector(gray, EdgeDetectorParams(img))
-edge_detector.detect()
-
-plt.subplot(131), plt.imshow(img)
-plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-
-plt.subplot(132), plt.imshow(gray, cmap=plt.get_cmap('gray'))
-plt.title('Original Gray Image'), plt.xticks([]), plt.yticks([])
-
-plt.subplot(133), plt.imshow(edge_detector.edge_image)
-plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
-plt.show()

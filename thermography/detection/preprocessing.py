@@ -20,11 +20,11 @@ class PreprocessingParams:
        :ivar red_threshold: Temperature threshold used to discard `cold` unimportant areas in the image.
        :ivar min_area: Minimal surface of retained `important` areas of the image. Warm regions whose surface is smaller than this threshold are discarded.
        """
-        self.gaussian_blur = 11
-        self.image_scaling = 8.0
+        self.gaussian_blur = 5
+        self.image_scaling = 1.0
         self.image_rotation = 0
         self.red_threshold = 120
-        self.min_area = 250 * 250
+        self.min_area = 50 * 50
 
 
 class FramePreprocessor:
