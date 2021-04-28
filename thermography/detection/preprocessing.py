@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 
 import cv2
 import numpy as np
@@ -8,23 +9,23 @@ from thermography.utils import scale_image, rotate_image
 __all__ = ["PreprocessingParams", "FramePreprocessor"]
 
 
+@dataclass
 class PreprocessingParams:
-    """Parameters used by the :class:`.FramePreprocessor`."""
+    """Parameters used by the :class:`.FramePreprocessor`.
+    Initializes the preprocessing parameters to their default value.
 
-    def __init__(self):
-        """Initializes the preprocessing parameters to their default value.
-
-       :ivar gaussian_blur: Radius of the gaussian blur to apply to the input image.
-       :ivar image_scaling: Scaling factor to apply to the input image.
-       :ivar image_rotation: Angle expressed in radiants used to rotate the input image.
-       :ivar red_threshold: Temperature threshold used to discard `cold` unimportant areas in the image.
-       :ivar min_area: Minimal surface of retained `important` areas of the image. Warm regions whose surface is smaller than this threshold are discarded.
-       """
-        self.gaussian_blur = 11
-        self.image_scaling = 8.0
-        self.image_rotation = 0
-        self.red_threshold = 120
-        self.min_area = 250 * 250
+    Attributes:
+        :param gaussian_blur: Radius of the gaussian blur to apply to the input image.
+        :param image_scaling: Scaling factor to apply to the input image.
+        :param image_rotation: Angle expressed in radiants used to rotate the input image.
+        :param red_threshold: Temperature threshold used to discard `cold` unimportant areas in the image.
+        :param min_area: Minimal surface of retained `important` areas of the image. Warm regions whose surface is smaller than this threshold are discarded.
+    """
+    gaussian_blur: int = 11
+    image_scaling: float = 8.0
+    image_rotation: int = 0
+    red_threshold: int = 120
+    min_area: int = 250 * 250
 
 
 class FramePreprocessor:

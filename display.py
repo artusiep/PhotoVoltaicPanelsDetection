@@ -110,10 +110,19 @@ def draw_rectangles(rectangles: list, base_image: np.ndarray, windows_name: str)
     opposite_color = np.array([255, 255, 255]) - mean_color
     opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
     for rectangle in rectangles:
-        cv2.polylines(base_image, np.int32([rectangle]), True, opposite_color, 1, cv2.LINE_AA)
-        cv2.fillConvexPoly(mask, np.int32([rectangle]), (255, 0, 0), cv2.LINE_4)
+        xmin, ymin = rectangle.min(axis=0)
+        xmax, ymax = rectangle.max(axis=0)
+        width = int(xmax)-int(xmin)
+        height = int(ymax)-int(ymin)
 
-    cv2.addWeighted(base_image, 1, mask, 0.3, 0, base_image)
+        xcentral = int(width / 2 + int(xmin))
+        ycentral = int(height / 2 + int(ymin))
+
+        cv2.polylines(base_image, np.int32([rectangle]), True, opposite_color, 5, cv2.LINE_AA)
+        cv2.fillConvexPoly(mask, np.int32([rectangle]), (255,0,0), cv2.LINE_4)
+        cv2.circle(mask, (xcentral, ycentral), radius=10, color=(0, 0, 0), thickness=-1)
+
+    cv2.addWeighted(base_image, 1, mask, 0.5, 0, base_image)
 
     cv2.imshow(windows_name, base_image)
 

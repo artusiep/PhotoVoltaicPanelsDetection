@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 # from simple_logger import Logger
 
@@ -6,16 +8,17 @@ from thermography.utils.geometry import angle, angle_diff, segment_segment_inter
 __all__ = ["IntersectionDetector", "IntersectionDetectorParams"]
 
 
+@dataclass
 class IntersectionDetectorParams:
-    """Parameters used by the :class:`.IntersectionDetector`."""
+    """Parameters used by the :class:`.IntersectionDetector`.
+    Initializes the intersection detector parameters to their default value.
 
-    def __init__(self):
-        """Initializes the intersection detector parameters to their default value.
+    Attributes:
+        :param angle_threshold: Only intersections between segments which deviate less than this parameter from the canonical 90° angle are accepted.
+    """
 
-        :ivar angle_threshold: Only intersections between segments which deviate less than this parameter from the canonical 90° angle are accepted.
-        """
-        # All intersections between segments whose relative angle is larger than this threshold are ignored.
-        self.angle_threshold = np.pi / 180 * 25
+    # All intersections between segments whose relative angle is larger than this threshold are ignored.
+    angle_threshold: float = np.pi / 180 * 25
 
 
 class IntersectionDetector:

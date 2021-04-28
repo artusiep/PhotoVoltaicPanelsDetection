@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 # from simple_logger import Logger
 from sklearn.cluster import KMeans
@@ -9,51 +11,52 @@ import thermography as tg
 __all__ = ["SegmentClusterer", "SegmentClustererParams", "ClusterCleaningParams"]
 
 
+@dataclass
 class SegmentClustererParams:
-    """Parameters used by the :class:`.SegmentClusterer` related to segment clustering."""
+    """Parameters used by the :class:`.SegmentClusterer` related to segment clustering.
+    Initializes the segment clusterer parameters to their default value.
 
-    def __init__(self):
-        """Initializes the segment clusterer parameters to their default value.
+    Attributes:
+        :param num_init: Number of times the cluster detector should reinitialize the cluster search (only works if :attr:`self.cluster_type` is `"knn"`).
+        :param num_clusters: Number of clusters to be searched.
+        :param swipe_clusters: Boolean flag which indicates whether the cluster search should sweep over the possible number of clusters or not. (only works if :attr:`self.cluster_type` is `"gmm"`).
+        :param cluster_type: String specifying which algorithm to used for cluster detection (`"knn"` : K-nearest neighbors, `"gmm"` : Gaussian mixture model).
+        :param use_angles: Boolean flag indicating if the features to be used for clustering should include the segment angles.
+        :param use_centers: Boolean flag indicating if the features to be used for clustering should include the segment centers.
+    """
 
-        :ivar num_init: Number of times the cluster detector should reinitialize the cluster search (only works if :attr:`self.cluster_type` is `"knn"`).
-        :ivar num_clusters: Number of clusters to be searched.
-        :ivar swipe_clusters: Boolean flag which indicates whether the cluster search should sweep over the possible number of clusters or not. (only works if :attr:`self.cluster_type` is `"gmm"`).
-        :ivar cluster_type: String specifying which algorithm to used for cluster detection (`"knn"` : K-nearest neighbors, `"gmm"` : Gaussian mixture model).
-        :ivar use_angles: Boolean flag indicating if the features to be used for clustering should include the segment angles.
-        :ivar use_centers: Boolean flag indicating if the features to be used for clustering should include the segment centers.
-        """
-        #  Number of initializations to be performed when clustering.
-        self.num_init = 10
-        # Number of clusters to extract from the parameter space.
-        self.num_clusters = 2
-        # Boolean flag, if set to 'True' and 'cluster_type' is 'gmm', then the algorithm iterates the clustering
-        # procedure over a range of number of clusters from 1 to 'num_clusters' and retains the best result.
-        self.swipe_clusters = False
-        # Clustering algorithm to be used, must be in ['gmm', 'knn'] which correspond to a full gaussian mixture model,
-        # and k-nearest-neighbors respectively.
-        self.cluster_type = "gmm"
-        # Boolean flag indicating whether to consider angles in the clustering process.
-        self.use_angles = True
-        # Boolean flag indicating whether to consider segment centroids in the clustering process.
-        self.use_centers = False
+    #  Number of initializations to be performed when clustering.
+    num_init: int = 10
+    # Number of clusters to extract from the parameter space.
+    num_clusters: int = 2
+    # Boolean flag, if set to 'True' and 'cluster_type' is 'gmm', then the algorithm iterates the clustering
+    # procedure over a range of number of clusters from 1 to 'num_clusters' and retains the best result.
+    swipe_clusters: bool = False
+    # Clustering algorithm to be used, must be in ['gmm', 'knn'] which correspond to a full gaussian mixture model,
+    # and k-nearest-neighbors respectively.
+    cluster_type: str = "gmm"
+    # Boolean flag indicating whether to consider angles in the clustering process.
+    use_angles: bool = True
+    # Boolean flag indicating whether to consider segment centroids in the clustering process.
+    use_centers: bool = False
 
 
+@dataclass
 class ClusterCleaningParams:
-    """Parameters used by the :class:`.SegmentClusterer` related to segment filtering."""
+    """Parameters used by the :class:`.SegmentClusterer` related to segment filtering.
+    Initializes the cluster cleaning parameters to their default value.
 
-    def __init__(self):
-        """Initializes the cluster cleaning parameters to their default value.
-
-        :ivar max_angle_variation_mean: Segments whose angle with the mean cluster angle deviates more than this parameter, are rejected.
-        :ivar max_merging_angle: Candidate segment pairs for merging whose relative angle deviates more than this threshold are not merged.
-        :ivar max_endpoint_distance: Candidate segment pairs for merging whose sum of squared distances between endpoints is larger than the square of this parameter are not merged.
-        """
-        # Maximal allowed angle between each segment and corresponding cluster mean angle.
-        self.max_angle_variation_mean = np.pi / 180 * 20
-        # Maximal allowed angle between two segments in order to merge them into a single one.
-        self.max_merging_angle = np.pi / 180 * 10
-        # Maximal summed distance between segments endpoints and fitted line for merging segments.
-        self.max_endpoint_distance = 10.0
+    Attributes:
+        :param max_angle_variation_mean: Segments whose angle with the mean cluster angle deviates more than this parameter, are rejected.
+        :param max_merging_angle: Candidate segment pairs for merging whose relative angle deviates more than this threshold are not merged.
+        :param max_endpoint_distance: Candidate segment pairs for merging whose sum of squared distances between endpoints is larger than the square of this parameter are not merged.
+    """
+    # Maximal allowed angle between each segment and corresponding cluster mean angle.
+    max_angle_variation_mean: float = np.pi / 180 * 20
+    # Maximal allowed angle between two segments in order to merge them into a single one.
+    max_merging_angle: float = np.pi / 180 * 10
+    # Maximal summed distance between segments endpoints and fitted line for merging segments.
+    max_endpoint_distance: float = 10.0
 
 
 class SegmentClusterer:
@@ -109,11 +112,11 @@ class SegmentClusterer:
 
         cluster_prediction = None
 
-        if self.params.cluster_type is "knn":
+        if self.params.cluster_type == "knn":
             # Logger.debug("Clustering segments using KNN")
             cluster_prediction = KMeans(n_clusters=self.params.num_clusters, n_init=self.params.num_init,
                                         random_state=0).fit_predict(features)
-        elif self.params.cluster_type is "gmm":
+        elif self.params.cluster_type == "gmm":
             # Logger.debug("Clustering segments using GMM")
             best_gmm = None
             lowest_bic = np.infty
@@ -181,7 +184,7 @@ class SegmentClusterer:
         self.__merge_collinear_segments(max_merging_angle=params.max_merging_angle,
                                         max_endpoint_distance=params.max_endpoint_distance)
 
-    def __clean_clusters_angle(self, mean_angles: np.ndarray, max_angle_variation_mean: float)->None:
+    def __clean_clusters_angle(self, mean_angles: np.ndarray, max_angle_variation_mean: float) -> None:
         """Removes all segments whose angle deviates more than the passed parameter from the mean cluster angle.
 
         :param mean_angles: List of cluster means.
