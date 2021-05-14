@@ -256,6 +256,11 @@ def segments_collinear(seg1: np.ndarray, seg2: np.ndarray, max_angle: float = 5.
     if intersection is not False:
         return True
     else:
+        min_distance = segment_min_distance(seg1, seg2)
+        # return min_distance <= 25
+        if min_distance >= 30:
+            return False
+
         (slope, intercept), vertical = line_estimate(seg1, seg2)
         dist_sum_2 = 0
         for point in [seg1[0:2], seg1[2:4], seg2[0:2], seg2[2:4]]:

@@ -72,18 +72,24 @@ class RectangleDetector:
 
             intersections_with_i_plus = intersections_i_j[segment_index_i + 1]
             for segment_index_j, intersection in intersections_with_i.items():
-                if segment_index_j + 1 not in intersections_with_i:
+
+                next_segment = segment_index_i + 1
+                if next_segment not in intersections_with_i:
+                    next_segment += 1
+
+                if next_segment not in intersections_with_i:
                     continue
-                if segment_index_j in intersections_with_i_plus and segment_index_j + 1 in intersections_with_i_plus:
+
+                if segment_index_j in intersections_with_i_plus and next_segment in intersections_with_i_plus:
                     coord1 = intersections_with_i[segment_index_j]
-                    coord2 = intersections_with_i[segment_index_j + 1]
+                    coord2 = intersections_with_i[next_segment]
                     coord3 = intersections_with_i_plus[segment_index_j]
-                    coord4 = intersections_with_i_plus[segment_index_j + 1]
+                    coord4 = intersections_with_i_plus[next_segment]
                     rectangle = np.array([coord1, coord2, coord4, coord3])
                     rectangle = sort_rectangle(rectangle)
-                    if self.fulfills_ratio(rectangle, self.params.aspect_ratio,
-                                           self.params.aspect_ratio_relative_deviation) and \
-                                    area(rectangle) >= self.params.min_area:
-                        rectangles_between_cluster_i_j.append(rectangle)
+                    # if self.fulfills_ratio(rectangle, self.params.aspect_ratio,
+                    #                        self.params.aspect_ratio_relative_deviation) and \
+                    #                 area(rectangle) >= self.params.min_area:
+                    rectangles_between_cluster_i_j.append(rectangle)
 
         self.rectangles.extend(rectangles_between_cluster_i_j)

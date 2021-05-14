@@ -15,7 +15,7 @@ class IntersectionDetectorParams:
         :ivar angle_threshold: Only intersections between segments which deviate less than this parameter from the canonical 90° angle are accepted.
         """
         # All intersections between segments whose relative angle is larger than this threshold are ignored.
-        self.angle_threshold = np.pi / 180 * 25
+        self.angle_threshold = np.pi / 180 * 30
 
 
 class IntersectionDetector:
@@ -75,6 +75,8 @@ class IntersectionDetector:
                 if intersection is not False:
                     intersections_with_i[j] = intersection
                     cluster_cluster_intersections_raw.append(intersection)
+            print('intersections')
+            print(intersections_with_i)
             self.cluster_cluster_intersections[cluster_index_i, cluster_index_j][i] = intersections_with_i
         if cluster_index_j >= cluster_index_i:
             self.raw_intersections.extend(cluster_cluster_intersections_raw)

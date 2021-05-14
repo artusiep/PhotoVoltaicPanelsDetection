@@ -28,10 +28,10 @@ class SegmentClustererParams:
         self.num_clusters = 2
         # Boolean flag, if set to 'True' and 'cluster_type' is 'gmm', then the algorithm iterates the clustering
         # procedure over a range of number of clusters from 1 to 'num_clusters' and retains the best result.
-        self.swipe_clusters = False
+        self.swipe_clusters = True
         # Clustering algorithm to be used, must be in ['gmm', 'knn'] which correspond to a full gaussian mixture model,
         # and k-nearest-neighbors respectively.
-        self.cluster_type = "gmm"
+        self.cluster_type = "knn"
         # Boolean flag indicating whether to consider angles in the clustering process.
         self.use_angles = True
         # Boolean flag indicating whether to consider segment centroids in the clustering process.
@@ -49,11 +49,11 @@ class ClusterCleaningParams:
         :ivar max_endpoint_distance: Candidate segment pairs for merging whose sum of squared distances between endpoints is larger than the square of this parameter are not merged.
         """
         # Maximal allowed angle between each segment and corresponding cluster mean angle.
-        self.max_angle_variation_mean = np.pi / 180 * 20
+        self.max_angle_variation_mean = np.pi / 180 * 40
         # Maximal allowed angle between two segments in order to merge them into a single one.
-        self.max_merging_angle = np.pi / 180 * 10
+        self.max_merging_angle = np.pi / 180 * 40
         # Maximal summed distance between segments endpoints and fitted line for merging segments.
-        self.max_endpoint_distance = 10.0
+        self.max_endpoint_distance = 30.0
 
 
 class SegmentClusterer:
@@ -109,11 +109,11 @@ class SegmentClusterer:
 
         cluster_prediction = None
 
-        if self.params.cluster_type is "knn":
+        if self.params.cluster_type == "knn":
             # Logger.debug("Clustering segments using KNN")
             cluster_prediction = KMeans(n_clusters=self.params.num_clusters, n_init=self.params.num_init,
                                         random_state=0).fit_predict(features)
-        elif self.params.cluster_type is "gmm":
+        elif self.params.cluster_type == "gmm":
             # Logger.debug("Clustering segments using GMM")
             best_gmm = None
             lowest_bic = np.infty

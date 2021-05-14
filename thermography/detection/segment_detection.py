@@ -57,18 +57,21 @@ class SegmentDetector:
                                         minLineLength=self.params.min_line_length,
                                         maxLineGap=self.params.max_line_gap)
 
+
         # If no segments have been found, return an empty array.
-        # if self.segments is None:
-        #     # Logger.warning("No segments were detected")
-        #     self.segments = np.empty(shape=(0, 4))
-        #     return
-        #
-        # # Otherwise need to reshape the segment array, and to extend the segments on each side to allow better
-        # # intersection detection.
+        if self.segments is None:
+            # Logger.warning("No segments were detected")
+            self.segments = np.empty(shape=(0, 4))
+            return
+
+        # Otherwise need to reshape the segment array, and to extend the segments on each side to allow better
+        # intersection detection.
         self.segments = np.squeeze(self.segments)
         if len(self.segments.shape) <= 1:
             self.segments = np.array([self.segments])
         self.__extend_segments()
+
+
 
     def __extend_segments(self):
         """Extends each segment by the parameters defined in self.params.extension_pixels.

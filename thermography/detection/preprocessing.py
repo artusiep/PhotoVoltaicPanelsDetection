@@ -24,7 +24,7 @@ class PreprocessingParams:
         self.image_scaling = 1.0
         self.image_rotation = 0
         self.red_threshold = 120
-        self.min_area = 50 * 50
+        self.min_area = 100 * 100
 
 
 class FramePreprocessor:
