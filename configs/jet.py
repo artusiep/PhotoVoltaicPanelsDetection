@@ -14,8 +14,8 @@ class JetConfig(Config):
         gaussian_blur=9,
         image_scaling=__image_scaling,
         image_rotation=0,
-        red_threshold=210,
-        min_area=(200 * __image_scaling) ** 2
+        red_threshold=120,
+        min_area=(120 * __image_scaling) ** 2
     )
     edge_detector_params = EdgeDetectorParams(
         hysteresis_min_thresh=35,
@@ -43,7 +43,7 @@ class JetConfig(Config):
     cluster_cleaning_params = ClusterCleaningParams(
         max_angle_variation_mean=np.pi / 180 * 20,
         max_merging_angle=np.pi / 180 * 10,
-        max_endpoint_distance=10 * (__image_scaling - 2)
+        max_endpoint_distance=35 * (__image_scaling)
     )
     intersection_detector_params = IntersectionDetectorParams(
         angle_threshold=np.pi / 180 * 25
@@ -51,5 +51,5 @@ class JetConfig(Config):
     rectangle_detector_params = RectangleDetectorParams(
         aspect_ratio=1.5,
         aspect_ratio_relative_deviation=0.35,
-        min_area=floor(40 * (__image_scaling)) * floor(60 * (__image_scaling))
+        min_area=floor(20 * (__image_scaling)) * floor(40 * (__image_scaling))
     )
