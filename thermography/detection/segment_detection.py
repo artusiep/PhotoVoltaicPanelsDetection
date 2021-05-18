@@ -1,35 +1,41 @@
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
+
 # from simple_logger import Logger
 
 __all__ = ["SegmentDetector", "SegmentDetectorParams"]
 
 
+@dataclass
 class SegmentDetectorParams:
-    """Parameters used by the :class:`.SegmentDetector`."""
+    """Parameters used by the :class:`.SegmentDetector`.
+    Initializes the segment detector parameters to their default value.
 
-    def __init__(self):
-        """Initializes the segment detector parameters to their default value.
+    Attributes:
+        :param d_rho: Distance resolution in pixels of the Hough parameter space.
+        :param d_theta: Angle resolution in pixels of the Hough parameter space expressed in radiants.
+        :param min_number_votes: Minimum number of votes in the Hough space to accept a segment.
+        :param min_line_length: Minimum line length for segment acceptance expressed in pixel units.
+        :param max_line_gap: Different segments who present a gap smaller than this parameter are detected as a single segment.
+        :param extension_pixels: All the detected segments are extended by this amount of pixels on each side.
+    """
 
-        :ivar d_rho: Distance resolution in pixels of the Hough parameter space.
-        :ivar d_theta: Angle resolution in pixels of the Hough parameter space expressed in radiants.
-        :ivar min_number_votes: Minimum number of votes in the Hough space to accept a segment.
-        :ivar min_line_length: Minimum line length for segment acceptance expressed in pixel units.
-        :ivar max_line_gap: Different segments who present a gap smaller than this parameter are detected as a single segment.
-        :ivar extension_pixels: All the detected segments are extended by this amount of pixels on each side.
-        """
-        # Distance resolution in pixels of the Hough grid.
-        self.d_rho = 1.0
-        # Angular resolution in radians of the Hough grid.
-        self.d_theta = np.pi / 180
-        # Minimum number of votes (intersections in Hough grid cell).
-        self.min_num_votes = 60
-        # Minimum number of pixels making up a line.
-        self.min_line_length = 50
-        # Maximum gap in pixels between connectible line segments.
-        self.max_line_gap = 150
-        # Number of pixels to extend each segment on each side.
-        self.extension_pixels = 10
+    # Distance resolution in pixels of the Hough grid.
+    d_rho: float = 1.0
+    # Angular resolution in radians of the Hough grid.
+    d_theta: float = np.pi / 180
+    # Minimum number of votes (intersections in Hough grid cell).
+    min_num_votes: int = 60
+    # Minimum number of pixels making up a line.
+    min_line_length: int = 50
+    # Maximum gap in pixels between connectible line segments.
+    max_line_gap: int = 150
+    # Number of pixels to extend each segment on each side.
+    extension_pixels: int = 10
+
+
 
 
 class SegmentDetector:
@@ -80,4 +86,3 @@ class SegmentDetector:
         directions *= self.params.extension_pixels
 
         self.segments = np.int32(np.hstack((self.segments[:, 0:2] - directions, self.segments[:, 2:4] + directions)))
-

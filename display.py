@@ -1,6 +1,7 @@
 """This module contains multiple utility functions which can be used to display intermediate representations computed by the :class:`ThermoApp <thermography.thermo_app.ThermoApp>` class."""
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 
 __all__ = ["draw_intersections", "draw_motion", "draw_rectangles", "draw_segments",
@@ -23,7 +24,8 @@ def draw_intersections(intersections: list, base_image: np.ndarray, windows_name
         cv2.circle(img=base_image, center=(int(intersection[0]), int(intersection[1])), radius=2, color=opposite_color,
                    thickness=3, lineType=cv2.LINE_4)
 
-    cv2.imshow(windows_name, base_image)
+    display_image_in_actual_size(base_image, windows_name)
+    # cv2.imshow(windows_name, base_image)
 
 
 def draw_motion(flow: np.ndarray, base_image: np.ndarray, windows_name: str, draw_mean_motion: bool = True, nums=10):
@@ -60,7 +62,8 @@ def draw_motion(flow: np.ndarray, base_image: np.ndarray, windows_name: str, dra
                             (int(mean_flow_x + center[0]), int(mean_flow_y + center[1])),
                             (0, 0, 255), 2, cv2.LINE_4)
 
-    cv2.imshow(windows_name, base_image)
+    display_image_in_actual_size(base_image, windows_name)
+    # cv2.imshow(windows_name, base_image)
 
 
 def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, render_indices: bool = True,
@@ -86,12 +89,12 @@ def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, ren
     for cluster, color in zip(segments, colors):
         for segment_index, segment in enumerate(cluster):
             cv2.line(img=base_image, pt1=(segment[0], segment[1]), pt2=(segment[2], segment[3]),
-                     color=color, thickness=1, lineType=cv2.LINE_AA)
+                     color=color, thickness=5, lineType=cv2.LINE_AA)
             if render_indices:
                 cv2.putText(base_image, str(segment_index), (segment[0], segment[1]), cv2.FONT_HERSHEY_PLAIN, 0.8,
                             (255, 255, 255), 1)
 
-    cv2.imshow(windows_name, base_image)
+    display_image_in_actual_size(base_image, windows_name)
 
 
 def draw_rectangles(rectangles: list, base_image: np.ndarray, windows_name: str):
@@ -110,12 +113,21 @@ def draw_rectangles(rectangles: list, base_image: np.ndarray, windows_name: str)
     opposite_color = np.array([255, 255, 255]) - mean_color
     opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
     for rectangle in rectangles:
-        cv2.polylines(base_image, np.int32([rectangle]), True, opposite_color, 1, cv2.LINE_AA)
+        xmin, ymin = rectangle.min(axis=0)
+        xmax, ymax = rectangle.max(axis=0)
+        width = int(xmax) - int(xmin)
+        height = int(ymax) - int(ymin)
+
+        xcentral = int(width / 2 + int(xmin))
+        ycentral = int(height / 2 + int(ymin))
+
+        cv2.polylines(base_image, np.int32([rectangle]), True, opposite_color, 5, cv2.LINE_AA)
         cv2.fillConvexPoly(mask, np.int32([rectangle]), (255, 0, 0), cv2.LINE_4)
+        cv2.circle(mask, (xcentral, ycentral), radius=10, color=(0, 0, 0), thickness=10)
 
-    cv2.addWeighted(base_image, 1, mask, 0.3, 0, base_image)
+    cv2.addWeighted(base_image, 1, mask, 0.5, 0, base_image)
 
-    cv2.imshow(windows_name, base_image)
+    display_image_in_actual_size(base_image, windows_name)
 
 
 def random_color() -> tuple:
@@ -135,3 +147,23 @@ def color_from_probabilities(prob: np.ndarray) -> tuple:
     """
     color = np.diag(prob).dot(np.ones(shape=[3, 1]) * 255.0)
     return (int(color[2]), int(color[0]), int(color[1]))
+
+
+def display_image_in_actual_size(base_image, windows_name):
+    dpi = 80
+    height, width, depth = base_image.shape
+
+    # What size does the figure need to be in inches to fit the image?
+    figsize = width / float(dpi), height / float(dpi)
+
+    # Create a figure of the right size with one axes that takes up the full figure
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes([0, 0, 1, 1])
+
+    # Hide spines, ticks, etc.
+    ax.axis('off')
+
+    # Display the image.
+    ax.imshow(base_image)
+    plt.title(windows_name)
+    plt.show()

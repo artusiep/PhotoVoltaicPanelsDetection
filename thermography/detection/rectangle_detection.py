@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 # from simple_logger import Logger
 
@@ -6,20 +8,21 @@ from thermography.utils.geometry import aspect_ratio, area, sort_rectangle
 __all__ = ["RectangleDetector", "RectangleDetectorParams"]
 
 
+@dataclass
 class RectangleDetectorParams:
-    """Parameters used by the :class:`.RectangleDetector`."""
+    """Parameters used by the :class:`.RectangleDetector`.
 
-    def __init__(self):
-        """Initializes the rectangle detector parameters to their default value.
+    Initializes the rectangle detector parameters to their default value.
 
-        :ivar aspect_rato: Expected rectangle aspect ratio.
-        :ivar aspect_ratio_relative_deviation: Detected rectangles whose aspect ratio deviates from :attr:`self.aspect_ratio` more than this parameter are ignored.
-        :ivar min_area: Minimal surface of detected rectangles. Smaller rectangles are rejected.
-        """
-        self.aspect_ratio = 1.5
-        self.aspect_ratio_relative_deviation = 0.35
+    Attributes:
+        :param aspect_rato: Expected rectangle aspect ratio.
+        :param aspect_ratio_relative_deviation: Detected rectangles whose aspect ratio deviates from :attr:`self.aspect_ratio` more than this parameter are ignored.
+        :param min_area: Minimal surface of detected rectangles. Smaller rectangles are rejected.
+    """
 
-        self.min_area = 20 * 40
+    aspect_ratio: float = 1.5
+    aspect_ratio_relative_deviation: float = 0.35
+    min_area: int = 20 * 40
 
 
 class RectangleDetector:
@@ -83,7 +86,7 @@ class RectangleDetector:
                     rectangle = sort_rectangle(rectangle)
                     if self.fulfills_ratio(rectangle, self.params.aspect_ratio,
                                            self.params.aspect_ratio_relative_deviation) and \
-                                    area(rectangle) >= self.params.min_area:
+                            area(rectangle) >= self.params.min_area:
                         rectangles_between_cluster_i_j.append(rectangle)
 
         self.rectangles.extend(rectangles_between_cluster_i_j)

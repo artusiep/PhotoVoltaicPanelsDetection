@@ -140,3 +140,4 @@ cython_debug/
 data/
 !data/raw/sample
 !data/thermal/sample
+test_results/*
