@@ -1,15 +1,15 @@
 import os
-from math import floor
 from typing import Tuple, Any
 
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-from display import draw_rectangles
-from thermography.detection import PreprocessingParams, EdgeDetectorParams, RectangleDetector, IntersectionDetector, \
-    SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, SegmentDetectorParams, SegmentClustererParams, \
-    ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
+from configs.abstract import Config
+from configs.jet import JetConfig
+from display import draw_rectangles, draw_segments
+from thermography.detection import RectangleDetector, IntersectionDetector, \
+    SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, EdgeDetectorParams
 
 
 def preprocess_frame_funcitonal(frame, params, imgs_show=False) -> Tuple[Any, Any]:
@@ -41,7 +41,7 @@ def preprocess_frame_funcitonal(frame, params, imgs_show=False) -> Tuple[Any, An
     return last_preprocessed_image, last_scaled_frame_rgb
 
 
-def detect_edges_funcitonal(frame, params) -> Any:
+def detect_edges_functional(frame, params: EdgeDetectorParams) -> Any:
     """Detects the edges in the :attr:`self.last_preprocessed_image` using the parameters in :attr:`self.edge_detection_parameters`.
 
     See Also:
@@ -145,11 +145,11 @@ def save_img(img, path):
         pass
     except Exception as e:
         print("Failed to create path to save image {e}")
-    result = cv2.imwrite(pathg, img, [cv2.IMWRITE_JPEG_QUALITY, 100])
+    result = cv2.imwrite(path, img, [cv2.IMWRITE_JPEG_QUALITY, 100])
     assert result
 
 
-def main(image_path, silent=True):
+def main(image_path, config: Config, silent=True):
     img = cv2.imread(image_path)
     image_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -158,36 +158,9 @@ def main(image_path, silent=True):
     #     undistorted_image = cv2.undistort(src=distorted_image)
     # else:
     #     undistorted_image = distorted_image
-    image_scaling = 6
-    preprocessed, last_scaled_frame_rgb = preprocess_frame_funcitonal(
-        img,
-        PreprocessingParams(
-            gaussian_blur=9,
-            image_scaling=image_scaling,
-            image_rotation=0,
-            red_threshold=90,
-            min_area=(100 * (image_scaling)) ** 2
-        ))
-
-    edge_image = detect_edges_funcitonal(
-        preprocessed,
-        EdgeDetectorParams(
-            hysteresis_min_thresh=35,
-            hysteresis_max_thresh=40,
-            kernel_size=(3, 3),
-            kernel_shape=cv2.MORPH_ELLIPSE,
-            dilation_steps=4
-        ))
-    segment_image = detect_segments_functional(
-        edge_image,
-        SegmentDetectorParams(
-            d_rho=1,
-            d_theta=np.pi / 180,
-            min_num_votes=75,
-            min_line_length=max(floor(50 * (image_scaling - 2)), 50),
-            max_line_gap=50 * image_scaling,
-            extension_pixels=15 * image_scaling
-        ))
+    preprocessed, last_scaled_frame_rgb = preprocess_frame_funcitonal(img, config.preprocessing_params, not silent)
+    edge_image = detect_edges_functional(preprocessed, config.edge_detector_params)
+    segment_image = detect_segments_functional(edge_image, config.segment_detector_params)
 
     if not silent:
         plt.subplot(121), plt.imshow(preprocessed)
@@ -198,37 +171,17 @@ def main(image_path, silent=True):
 
     cluster_list = cluster_segments_functional(
         segment_image,
-        params=SegmentClustererParams(
-            num_init=10,
-            num_clusters=2,
-            swipe_clusters=True,
-            cluster_type="gmm",
-            use_angles=True,
-            use_centers=True
-        ),
-        cleaning_params=ClusterCleaningParams(
-            max_angle_variation_mean=np.pi / 180 * 20,
-            max_merging_angle=np.pi / 180 * 10,
-            max_endpoint_distance=10.0 * (image_scaling - 2)
-        ))
+        params=config.segment_clusterer_params,
+        cleaning_params=config.cluster_cleaning_params)
 
-    # draw_segments(cluster_list, last_scaled_frame_rgb, "Segments")
-    intersections = detect_intersections_functional(
-        cluster_list,
-        params=IntersectionDetectorParams(
-            angle_threshold=np.pi / 180 * 25
-        ))
+    intersections = detect_intersections_functional(cluster_list, params=config.intersection_detector_params)
+    rectangles = detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
 
-    rectangles = detect_rectangles_functional(
-        intersections,
-        params=RectangleDetectorParams(
-            aspect_ratio=1.5,
-            aspect_ratio_relative_deviation=0.35,
-            min_area=floor(40 * (image_scaling)) * floor(60 * (image_scaling))
-        ))
-
-    # self.detect_edges()
     if not silent:
+        draw_segments(cluster_list, last_scaled_frame_rgb, "Segments")
         draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")
-        cv2.waitKey()
     return annotated_photos(rectangles, last_scaled_frame_rgb)
+
+
+if __name__ == '__main__':
+    main('extractor/_thermal_jet..jpg', JetConfig(), silent=False)

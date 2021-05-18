@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import pytest
 
-from main import preprocess_frame_funcitonal, detect_edges_funcitonal, detect_segments_functional, \
+from main import preprocess_frame_funcitonal, detect_edges_functional, detect_segments_functional, \
     cluster_segments_functional, detect_intersections_functional, detect_rectangles_functional
 from thermography.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, \
     SegmentClustererParams, \
@@ -84,7 +84,7 @@ def test_edge_tweaking(hysteresis_min_thresh, hysteresis_max_thresh, morph_type)
             red_threshold=100,
             min_area=(100 * (image_scaling)) ** 2
         ))
-    edge_image = detect_edges_funcitonal(
+    edge_image = detect_edges_functional(
         preprocessed,
         EdgeDetectorParams(
             hysteresis_min_thresh=hysteresis_min_thresh,
