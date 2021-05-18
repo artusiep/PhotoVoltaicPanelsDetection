@@ -96,31 +96,86 @@ def detect_rectangles_funcitonal(intersections) -> None:
     return last_rectangles
 
 
-image_path = "data/raw/sample.JPG"
+import os
 
-time = time.time()
+import flirimageextractor
+from matplotlib import cm
+#
+
+
+
+
+directory = "../violet"
+
+# for filename in os.listdir(directory):
+#     try:
+#         palettes = [cm.jet, cm.bwr, cm.gist_ncar, cm.plasma, cm.turbo]
+#         flir = flirimageextractor.FlirImageExtractor(palettes=palettes)
+#         img_path = os.path.join(directory, filename)
+#         flir.process_image(img_path)
+#         flir.save_images()
+#     except:
+#         print('couldnot')
+
+# for filename in os.listdir(directory):
+#     try:
+#         img_path = os.path.join(directory, filename)
+#         print(img_path)
+#
+#         img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+#         img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+#
+#         preprocessed, last_rgb = preprocess_frame_funcitonal(img)
+#
+#         edge_image = detect_edges_funcitonal(preprocessed)
+#
+#         segement_image = detect_segments_funcitonal(edge_image)
+#         cluster_list = cluster_segments_funcitonal(segement_image)
+#         draw_segments(cluster_list, preprocessed, f"Segments {time}")
+#
+#         cv2.imshow('segments', preprocessed)
+#
+#         cv2.waitKey()
+#
+#         intersections = detect_intersections_funcitonal(cluster_list)
+#         rectanbles = detect_rectangles_funcitonal(intersections)
+#
+#         thermal_img_path = "../flir/" + filename + "_thermal_plasma.JPG"
+#         thermal_img = cv2.imread(thermal_img_path, cv2.IMREAD_COLOR)
+#
+#         draw_rectangles(rectanbles, thermal_img, "Rectangles")
+#         cv2.waitKey()
+#     except Exception as e:
+#         print(e)
+
+
+
+image_path = "../flir/DJI_2_R (724)_thermal_plasma.JPG"
+# image_path = "data/sample/sample.JPG"
+# image_path = "data/raw/DJI_1_R (953)_thermal_bwr.JPG"
+# image_path = "data/sample/DJI_2_R (130)_thermal_bwr.JPG"
 
 img = cv2.imread(image_path, cv2.IMREAD_COLOR)
 img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-# cv2.imshow(f"asd {time}", img)
+cv2.imshow("hsv", img)
+
+time = time.time()
 
 preprocessed, last_rgb = preprocess_frame_funcitonal(img)
-edge_image = detect_edges_funcitonal(preprocessed)
-
-segement_image = detect_segments_funcitonal(edge_image)
-
-cluster_list = cluster_segments_funcitonal(segement_image)
-
 cv2.imshow(f"pre {time}", preprocessed)
 # cv2.waitKey()
 
+edge_image = detect_edges_funcitonal(preprocessed)
+
 cv2.imshow(f"EDGE {time}", edge_image)
-# cv2.waitKey()
+cv2.waitKey()
 
+
+segement_image = detect_segments_funcitonal(edge_image)
+cluster_list = cluster_segments_funcitonal(segement_image)
 draw_segments(cluster_list, preprocessed, f"Segments {time}")
-
-# cv2.imshow('segments', preprocessed)
+cv2.imshow('segments', preprocessed)
 # cv2.waitKey()
 
 intersections = detect_intersections_funcitonal(cluster_list)
@@ -128,7 +183,3 @@ rectanbles = detect_rectangles_funcitonal(intersections)
 draw_rectangles(rectanbles, last_rgb, "Rectangles")
 
 cv2.waitKey()
-
-# import flirimageextractor
-# from matplotlib import cm
-#

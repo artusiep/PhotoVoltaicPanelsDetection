@@ -74,8 +74,13 @@ class RectangleDetector:
             for segment_index_j, intersection in intersections_with_i.items():
 
                 next_segment = segment_index_i + 1
-                if next_segment not in intersections_with_i:
+
+                segments_checks_number = 0
+                while next_segment not in intersections_with_i:
                     next_segment += 1
+                    segments_checks_number += 1
+                    if segments_checks_number == 5:
+                        break
 
                 if next_segment not in intersections_with_i:
                     continue

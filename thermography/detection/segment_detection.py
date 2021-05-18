@@ -29,7 +29,7 @@ class SegmentDetectorParams:
         # Maximum gap in pixels between connectible line segments.
         self.max_line_gap = 150
         # Number of pixels to extend each segment on each side.
-        self.extension_pixels = 10
+        self.extension_pixels = 50
 
 
 class SegmentDetector:
