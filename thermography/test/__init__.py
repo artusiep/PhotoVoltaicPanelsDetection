@@ -1,1 +1,0 @@
-"""This package contains the unittests related to the utility functions of :mod:`thermography`."""
