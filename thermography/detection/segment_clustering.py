@@ -219,6 +219,8 @@ class SegmentClusterer:
                     if tg.utils.segments_collinear(segment_i, segment_j, max_angle=max_merging_angle,
                                                    max_endpoint_distance=max_endpoint_distance):
                         collinears.append(j)
+                    elif tg.utils.segments_parallel(segment_i, segment_j, max_distance=30):
+                        collinears.append(j)
 
                 merged_segment = tg.utils.merge_segments(cluster[collinears])
                 merged_segment = [int(m) for m in merged_segment]

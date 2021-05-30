@@ -14,6 +14,7 @@ __all__ = ["angle",
            "point_line_distance",
            "rectangle_contains",
            "segments_collinear",
+           "segments_parallel",
            "segment_line_intersection",
            "segment_min_distance",
            "segment_segment_intersection",
@@ -265,6 +266,43 @@ def segments_collinear(seg1: np.ndarray, seg2: np.ndarray, max_angle: float = 5.
         return True
 
 
+def segments_collinear_multiple(seg1: np.ndarray, seg2: np.ndarray, max_angle: float = 5.0 / 180 * np.pi,
+                                max_endpoint_distance: float = 50.0) -> bool:
+    """Tests whether two segments are collinear given some thresholds for collinearity.
+
+    :param seg1: First segment to be tested.
+    :param seg2: Second segment to be tested.
+    :param max_angle: Maximal angle between segments to be accepted as collinear.
+    :param max_endpoint_distance: Max sum of euclidean distance between the endpoints of the passed segments and the line estimate computed between the segments. This parameter discards almost parallel segments with different intercept.
+    :return: True if the segments are almost collinear, False otherwise.
+    """
+    # Compute the angle between the segments.
+    a = angle_diff(angle(seg1[0:2], seg1[2:4]), angle(seg2[0:2], seg2[2:4]))
+    if a > max_angle:
+        return False
+
+    intersection = segment_segment_intersection(np.array(seg1), np.array(seg2))
+    if intersection is not False:
+        return True
+    else:
+        min_distance = segment_min_distance(seg1, seg2)
+        # return min_distance <= 25
+        if min_distance >= 200:
+            return False
+
+        (slope, intercept), vertical = line_estimate(seg1, seg2)
+        dist_sum_2 = 0
+        for point in [seg1[0:2], seg1[2:4], seg2[0:2], seg2[2:4]]:
+            dist_sum_2 += point_line_distance(point, slope, intercept, vertical) ** 2
+        if dist_sum_2 >= max_endpoint_distance ** 2:
+            return False
+        return True
+
+
+def segments_parallel(segment_i, segment_j, max_distance):
+    return False
+
+
 def segment_line_intersection(seg: np.ndarray, slope: float, intercept: float) -> np.ndarray:
     """Computes the intersection point between a segment and a line.
 
@@ -457,6 +495,7 @@ def sort_segments(segment_list: list) -> np.ndarray:
     normal = np.array([-direction[1], direction[0]])
 
     # Project the segment centers along the normal defined by the mean angle.
+    # projected_centers = np.array([np.dot(center, [1,1])/np.dot(center, normal) for center in segment_centers])
     projected_centers = np.array([np.dot(center, normal) for center in segment_centers])
     order = np.argsort(projected_centers)
 

@@ -2,7 +2,7 @@ import flirimageextractor
 from matplotlib import cm
 from exif import Image
 
-file_path = '../data/raw/DJI_4_R(906).JPG'
+file_path = '../data/raw/DJI_4_R(600).JPG'
 
 with open(file_path, 'rb') as image_file:
     my_image = Image(image_file)

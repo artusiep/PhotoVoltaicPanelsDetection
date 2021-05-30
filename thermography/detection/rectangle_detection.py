@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 
 import numpy as np
-# from simple_logger import Logger
 
 from thermography.utils.geometry import aspect_ratio, area, sort_rectangle
+
+# from simple_logger import Logger
 
 __all__ = ["RectangleDetector", "RectangleDetectorParams"]
 
@@ -90,3 +91,15 @@ class RectangleDetector:
                         rectangles_between_cluster_i_j.append(rectangle)
 
         self.rectangles.extend(rectangles_between_cluster_i_j)
+
+    def get_rectangle(self, intersections_with_i, intersections_with_i_plus, segment_index_j, rectangles_between_cluster_i_j):
+        coord1 = intersections_with_i[segment_index_j]
+        coord2 = intersections_with_i[segment_index_j + 1]
+        coord3 = intersections_with_i_plus[segment_index_j]
+        coord4 = intersections_with_i_plus[segment_index_j + 1]
+        rectangle = np.array([coord1, coord2, coord4, coord3])
+        rectangle = sort_rectangle(rectangle)
+        if self.fulfills_ratio(rectangle, self.params.aspect_ratio, self.params.aspect_ratio_relative_deviation) and \
+                area(rectangle) >= self.params.min_area:
+            rectangles_between_cluster_i_j.append(rectangle)
+        return rectangles_between_cluster_i_j

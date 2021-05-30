@@ -20,25 +20,29 @@ def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):
     opposite_color = np.array([255, 255, 255]) - mean_color
     opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
     for rectangle in rectangles:
-        xmin, ymin = rectangle.min(axis=0)
-        xmax, ymax = rectangle.max(axis=0)
-        width = int(xmax) - int(xmin)
-        height = int(ymax) - int(ymin)
-
-        xcentral = int(width / 2 + int(xmin))
-        ycentral = int(height / 2 + int(ymin))
+        x_central, y_central, width, height = calculate_centers(rectangle)
 
         cv2.polylines(base_image, np.int32([rectangle]), True, opposite_color, 5, cv2.LINE_AA)
         cv2.fillConvexPoly(mask, np.int32([rectangle]), (255, 0, 0), cv2.LINE_4)
-        cv2.circle(mask, (xcentral, ycentral), radius=10, color=(0, 0, 0), thickness=10)
+        cv2.circle(mask, (x_central, y_central), radius=10, color=(0, 0, 0), thickness=10)
 
     cv2.addWeighted(base_image, 1, mask, 0.5, 0, base_image)
 
     return base_image
 
 
+def calculate_centers(rectangle):
+    xmin, ymin = rectangle.min(axis=0)
+    xmax, ymax = rectangle.max(axis=0)
+    width = int(xmax) - int(xmin)
+    height = int(ymax) - int(ymin)
+    x_central = int(width / 2 + int(xmin))
+    y_central = int(height / 2 + int(ymin))
+    return x_central, y_central, width, height
+
 def read_bgr_img(path):
     return cv2.imread(path)
+
 
 def save_img(img, path):
     catalogues = "/".join(path.split('/')[:-1])

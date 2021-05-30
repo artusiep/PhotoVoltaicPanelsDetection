@@ -103,7 +103,7 @@ class FramePreprocessor:
                 _, thresholded_image = cv2.threshold(red_channel, self.params.red_threshold, 255, 0, cv2.THRESH_BINARY)
 
                 # Perform dilation and erosion on the thresholded image to remove holes and small islands.
-                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
                 closing = cv2.morphologyEx(thresholded_image, cv2.MORPH_CLOSE, kernel)
                 opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
 

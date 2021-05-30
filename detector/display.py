@@ -1,4 +1,5 @@
 """This module contains multiple utility functions which can be used to display intermediate representations computed by the :class:`ThermoApp <thermography.thermo_app.ThermoApp>` class."""
+from math import ceil
 
 import cv2
 import matplotlib.pyplot as plt
@@ -23,8 +24,8 @@ def draw_intersections(intersections: list, base_image: np.ndarray, windows_name
     opposite_color = np.array([255, 255, 255]) - mean_color
     opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
     for intersection in intersections:
-        cv2.circle(img=base_image, center=(int(intersection[0]), int(intersection[1])), radius=2, color=opposite_color,
-                   thickness=3, lineType=cv2.LINE_4)
+        cv2.circle(img=base_image, center=(int(intersection[0]), int(intersection[1])), radius=30, color=opposite_color,
+                   thickness=20, lineType=cv2.LINE_4)
 
     display_image_in_actual_size(base_image, windows_name)
     # cv2.imshow(windows_name, base_image)
@@ -67,6 +68,8 @@ def draw_motion(flow: np.ndarray, base_image: np.ndarray, windows_name: str, dra
     display_image_in_actual_size(base_image, windows_name)
     # cv2.imshow(windows_name, base_image)
 
+# def draw_segements(segments: list, base_image: np.ndarray, windows_name: str):
+
 
 def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, render_indices: bool = True,
                   colors: list = None):
@@ -88,13 +91,15 @@ def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, ren
         for cluster_number in range(2, len(segments)):
             colors.append(random_color())
 
+    scaling_factor = ceil(base_image.shape[0] / 1000)
+
     for cluster, color in zip(segments, colors):
         for segment_index, segment in enumerate(cluster):
             cv2.line(img=base_image, pt1=(segment[0], segment[1]), pt2=(segment[2], segment[3]),
-                     color=color, thickness=5, lineType=cv2.LINE_AA)
+                     color=color, thickness=2*scaling_factor, lineType=cv2.LINE_AA)
             if render_indices:
-                cv2.putText(base_image, str(segment_index), (segment[0], segment[1]), cv2.FONT_HERSHEY_PLAIN, 0.8,
-                            (255, 255, 255), 1)
+                cv2.putText(base_image, str(segment_index), (segment[0], segment[1]), cv2.FONT_HERSHEY_PLAIN, 0.8*scaling_factor*2,
+                            (255, 255, 255), 1*scaling_factor)
 
     display_image_in_actual_size(base_image, windows_name)
 
@@ -130,9 +135,12 @@ def color_from_probabilities(prob: np.ndarray) -> tuple:
     return (int(color[2]), int(color[0]), int(color[1]))
 
 
-def display_image_in_actual_size(base_image, windows_name):
+def display_image_in_actual_size(base_image: np.ndarray, windows_name='default'):
     base_image = cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB)
-    dpi = 80
+    if base_image.shape[0] < 900 and base_image.shape[1] < 900:
+        dpi = 80
+    else:
+        dpi = 80*4
     height, width, depth = base_image.shape
 
     # What size does the figure need to be in inches to fit the image?

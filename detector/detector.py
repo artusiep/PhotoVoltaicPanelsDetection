@@ -1,10 +1,13 @@
 from typing import Tuple, Any
 
+from cv2 import cv2
 from matplotlib import pyplot as plt
 
 from configs.abstract import Config
 from configs.jet import JetConfig
-from display import draw_rectangles, draw_segments, rectangle_annotated_photos
+from display import draw_rectangles, draw_segments, rectangle_annotated_photos, draw_intersections, \
+    display_image_in_actual_size
+from labeler import YoloRectangleLabeler
 from thermography.detection import RectangleDetector, IntersectionDetector, \
     SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, EdgeDetectorParams
 from utils import read_bgr_img
@@ -22,16 +25,16 @@ def preprocess_frame_funcitonal(frame, params, imgs_show=False) -> Tuple[Any, An
     last_preprocessed_image = frame_preprocessor.preprocessed_image
     last_attention_image = frame_preprocessor.attention_image
     if imgs_show:
-        plt.subplot(141), plt.imshow(last_scaled_frame_rgb)
+        plt.subplot(221), plt.imshow(cv2.cvtColor(last_scaled_frame_rgb, cv2.COLOR_BGR2RGB))
         plt.title('last_scaled_frame_rgb'), plt.xticks([]), plt.yticks([])
 
-        plt.subplot(142), plt.imshow(last_scaled_frame)
+        plt.subplot(222), plt.imshow(cv2.cvtColor(last_scaled_frame, cv2.COLOR_BGR2RGB))
         plt.title('last_scaled_fram'), plt.xticks([]), plt.yticks([])
 
-        plt.subplot(143), plt.imshow(last_preprocessed_image)
-        plt.title('ast_preprocessed_image'), plt.xticks([]), plt.yticks([])
+        plt.subplot(223), plt.imshow(cv2.cvtColor(last_preprocessed_image, cv2.COLOR_BGR2RGB))
+        plt.title('last_preprocessed_image'), plt.xticks([]), plt.yticks([])
 
-        plt.subplot(144), plt.imshow(last_attention_image)
+        plt.subplot(224), plt.imshow(cv2.cvtColor(last_attention_image, cv2.COLOR_BGR2RGB))
         plt.title('last_attention_image'), plt.xticks([]), plt.yticks([])
 
         plt.show()
@@ -39,7 +42,7 @@ def preprocess_frame_funcitonal(frame, params, imgs_show=False) -> Tuple[Any, An
     return last_preprocessed_image, last_scaled_frame_rgb
 
 
-def detect_edges_functional(frame, params: EdgeDetectorParams) -> Any:
+def detect_edges_functional(frame, params: EdgeDetectorParams, imgs_show=False) -> Any:
     """Detects the edges in the :attr:`self.last_preprocessed_image` using the parameters in :attr:`self.edge_detection_parameters`.
 
     See Also:
@@ -48,6 +51,13 @@ def detect_edges_functional(frame, params: EdgeDetectorParams) -> Any:
     edge_detector.detect()
 
     edge_image = edge_detector.edge_image
+
+    if not imgs_show:
+        plt.subplot(121), plt.imshow(frame)
+        plt.title('preprocessed'), plt.xticks([]), plt.yticks([])
+        plt.subplot(122), plt.imshow(edge_image)
+        plt.title('edge_image'), plt.xticks([]), plt.yticks([])
+        plt.show()
     return edge_image
 
 
@@ -93,6 +103,17 @@ def detect_rectangles_functional(intersections, params) -> Any:
     return last_rectangles
 
 
+def get_rectangles_labels(rectangles, preprocessed_image, image_path) -> Any:
+    """Detects the rectangles defined through the intersections in :attr:`self.last_intersections` according to the parameters in :attr:`self.rectangle_detection_parameters`.
+    See Also:
+        Module :mod:`~thermography.detection.rectangle_detection` for more details."""
+    labeler = YoloRectangleLabeler(rectangles=rectangles, preprocessed_image=preprocessed_image, image_path=image_path)
+    label_file = labeler.create_label_file()
+    print(f"Created label file: {label_file}")
+
+    return labeler.labels_collector
+
+
 def main(image_path, config: Config, silent=True):
     img = read_bgr_img(image_path)
 
@@ -102,29 +123,28 @@ def main(image_path, config: Config, silent=True):
     # else:
     #     undistorted_image = distorted_image
     preprocessed, last_scaled_frame_rgb = preprocess_frame_funcitonal(img, config.preprocessing_params, not silent)
-    edge_image = detect_edges_functional(preprocessed, config.edge_detector_params)
-    segment_image = detect_segments_functional(edge_image, config.segment_detector_params)
+    edge_image = detect_edges_functional(preprocessed, config.edge_detector_params, not silent)
+    segments = detect_segments_functional(edge_image, config.segment_detector_params)
 
     if not silent:
-        plt.subplot(121), plt.imshow(preprocessed)
-        plt.title('preprocessed'), plt.xticks([]), plt.yticks([])
-        plt.subplot(122), plt.imshow(edge_image)
-        plt.title('edge_image'), plt.xticks([]), plt.yticks([])
-        plt.show()
+        display_image_in_actual_size(preprocessed)
+        display_image_in_actual_size(edge_image)
 
     cluster_list = cluster_segments_functional(
-        segment_image,
+        segments,
         params=config.segment_clusterer_params,
         cleaning_params=config.cluster_cleaning_params)
 
     intersections = detect_intersections_functional(cluster_list, params=config.intersection_detector_params)
     rectangles = detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
+    get_rectangles_labels(rectangles, preprocessed, image_path)
 
     if not silent:
-        draw_segments(cluster_list, last_scaled_frame_rgb, "Segments")
+        draw_segments(cluster_list, last_scaled_frame_rgb, "Segments", render_indices=True)
+        draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
         draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")
     return rectangle_annotated_photos(rectangles, last_scaled_frame_rgb)
 
 
 if __name__ == '__main__':
-    main('../data/thermal/TEMP_DJI_1_R (505).JPG', JetConfig(), silent=False)
+    main('../data/thermal/TEMP_DJI_5_R (337).JPG', JetConfig(), silent=False)

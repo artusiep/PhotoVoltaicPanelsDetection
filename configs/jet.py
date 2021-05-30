@@ -15,13 +15,13 @@ class JetConfig(Config):
         image_scaling=__image_scaling,
         image_rotation=0,
         red_threshold=120,
-        min_area=(120 * __image_scaling) ** 2
+        min_area=(150 * __image_scaling) ** 2
     )
     edge_detector_params = EdgeDetectorParams(
         hysteresis_min_thresh=35,
         hysteresis_max_thresh=45,
         kernel_size=(5, 5),
-        kernel_shape=cv2.MORPH_ELLIPSE,
+        kernel_shape=cv2.MORPH_CROSS,
         dilation_steps=4
     )
     segment_detector_params = SegmentDetectorParams(
