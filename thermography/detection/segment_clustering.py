@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-# from simple_logger import Logger
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import normalize
@@ -36,9 +35,11 @@ class SegmentClustererParams:
     # and k-nearest-neighbors respectively.
     cluster_type: str = "gmm"
     # Boolean flag indicating whether to consider angles in the clustering process.
-    use_angles: bool = True
+    use_angles: bool = False
     # Boolean flag indicating whether to consider segment centroids in the clustering process.
     use_centers: bool = False
+    # Centroids to be considered during columns in clustering process.
+    centroids: list = None
 
 
 @dataclass
@@ -81,6 +82,7 @@ class SegmentClusterer:
 
         centers = []
         angles = []
+        centroids_distance = []
         for segment in self.raw_segments:
             pt1 = segment[0:2]
             pt2 = segment[2:4]
@@ -95,6 +97,8 @@ class SegmentClusterer:
             # and does not directly on angles.
             point = np.array([np.cos(angle), np.sin(angle)])
             angles.append(point)
+            if self.params.centroids:
+                centroids_distance.append([np.linalg.norm(center - centroid) for centroid in self.params.centroids])
 
         centers = np.array(centers)
         centers = normalize(centers, axis=0)
@@ -106,6 +110,8 @@ class SegmentClusterer:
             features = angles
         elif self.params.use_centers:
             features = centers
+        elif self.params.centroids:
+            features = np.asarray(centroids_distance)
         else:
             raise RuntimeError("Can not perform segment clustering without any feature. "
                                "Select 'use_angles=True' and/or 'use_centers=True'.")
@@ -216,8 +222,8 @@ class SegmentClusterer:
                 collinears = [i]
                 for j in range(i + 1, len(cluster)):
                     segment_j = cluster[j]
-                    if tg.utils.segments_collinear(segment_i, segment_j, max_angle=max_merging_angle,
-                                                   max_endpoint_distance=max_endpoint_distance):
+                    if tg.utils.segments_collinear_multiple(segment_i, segment_j, max_angle=max_merging_angle,
+                                                            max_endpoint_distance=max_endpoint_distance):
                         collinears.append(j)
                     elif tg.utils.segments_parallel(segment_i, segment_j, max_distance=30):
                         collinears.append(j)

@@ -43,6 +43,7 @@ class FramePreprocessor:
         self.scaled_image_rgb = None
         self.scaled_image = None
         self.attention_image = None
+        self.centroids = None
 
     @property
     def channels(self) -> int:
@@ -109,10 +110,10 @@ class FramePreprocessor:
 
                 # contours is a python list of all detected contours which are represented as numpy arrays of (x,y) coords.
                 contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                areas = [cv2.contourArea(contour) for contour in contours]
-                discarded_contours = [area < self.params.min_area for area in areas]
-                contours = [contours[i] for i in range(len(contours)) if not discarded_contours[i]]
+                contours = [contour for contour in contours if cv2.contourArea(contour) > self.params.min_area]
 
+                hulls = [cv2.convexHull(contour) for contour in contours]
+                contours = hulls
                 mask = np.zeros_like(self.scaled_image)
                 cv2.drawContours(mask, contours, -1, (255), cv2.FILLED)
 
