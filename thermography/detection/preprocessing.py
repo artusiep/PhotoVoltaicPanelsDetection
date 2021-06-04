@@ -1,4 +1,3 @@
-import math
 from dataclasses import dataclass
 
 import cv2
@@ -25,6 +24,7 @@ class PreprocessingParams:
     image_scaling: float = 8.0
     image_rotation: int = 0
     red_threshold: int = 120
+    min_red_contour: int = 120
     min_area: int = 250 * 250
 
 
@@ -114,8 +114,21 @@ class FramePreprocessor:
 
                 hulls = [cv2.convexHull(contour) for contour in contours]
                 contours = hulls
+                result_contours = []
+                for contour in contours:
+                    mask = np.zeros_like(self.scaled_image)
+                    cv2.drawContours(mask, [contour], 0, (255), cv2.FILLED)
+                    mask = mask.astype(np.float) / 255.
+                    result = self.scaled_image_rgb[:, :, 2] * mask
+                    red_channel = np.ma.masked_equal(result, 0)
+                    v = np.ma.average(np.ma.masked_equal(red_channel, 0))
+                    if v >= self.params.min_red_contour:
+                        result_contours.append(contour)
+                if len(contours) > len(result_contours):
+                    print("Reduced number of contours")
+
                 mask = np.zeros_like(self.scaled_image)
-                cv2.drawContours(mask, contours, -1, (255), cv2.FILLED)
+                cv2.drawContours(mask, result_contours, -1, (255), cv2.FILLED)
 
                 mask = cv2.dilate(mask, kernel, iterations=5)
                 mask = cv2.blur(mask, (25, 25))
