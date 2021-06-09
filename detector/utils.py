@@ -59,7 +59,6 @@ def save_img(img, path):
 def auto_canny(image):
     sigma = 0.33
     v = np.ma.median(np.ma.masked_equal(image, 0))
-    print(v)
     lower = int(max(0, (1.0 - sigma) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     return lower, upper
