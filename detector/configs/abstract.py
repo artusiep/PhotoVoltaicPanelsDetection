@@ -1,7 +1,7 @@
-from abc import ABC
+from detector.utils.pvpd_base_class import PVPDBaseClass
 
 
-class Config(ABC):
+class Config(PVPDBaseClass):
     preprocessing_params = None
     edge_detector_params = None
     segment_detector_params = None

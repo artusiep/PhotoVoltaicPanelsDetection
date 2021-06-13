@@ -1,17 +1,16 @@
+import logging
 import os
 
 import cv2
 import numpy as np
+from matplotlib import cm
 
 
 def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):
     """Draws the rectangles contained in the first parameter onto the base image passed as second parameter.
-
-    This function displays the image using the third parameter as title.
-
+    It also draw point in central of rectangle.
     :param rectangles: List of rectangles.
     :param base_image: Base image over which to render the rectangles.
-    :param windows_name: Title to give to the rendered image.
     """
     mean_color = np.mean(base_image, axis=(0, 1))
     mask = np.zeros_like(base_image)
@@ -40,6 +39,7 @@ def calculate_centers(rectangle):
     y_central = int(height / 2 + int(ymin))
     return x_central, y_central, width, height
 
+
 def read_bgr_img(path):
     return cv2.imread(path)
 
@@ -51,7 +51,7 @@ def save_img(img, path):
     except FileExistsError:
         pass
     except Exception as e:
-        print("Failed to create path to save image {e}")
+        logging.error(f"Failed to create path to save image {e}")
     result = cv2.imwrite(path, img, [cv2.IMWRITE_JPEG_QUALITY, 100])
     assert result
 
@@ -62,3 +62,11 @@ def auto_canny(image):
     lower = int(max(0, (1.0 - sigma) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     return lower, upper
+
+
+def available_color_maps():
+    return cm._cmap_registry.keys()
+
+
+def get_color_map_by_name(name):
+    return cm._cmap_registry[name]

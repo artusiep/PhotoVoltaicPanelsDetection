@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import normalize
-
+import logging
 import thermography as tg
 
 __all__ = ["SegmentClusterer", "SegmentClustererParams", "ClusterCleaningParams"]
@@ -62,6 +62,7 @@ class ClusterCleaningParams:
 
 class SegmentClusterer:
     """Class responsible for clustering and cleaning the raw segments extracted by the :class:`SegmentDetector` class."""
+    clustering_types = ('gmm', 'knn')
 
     def __init__(self, input_segments: np.ndarray, params: SegmentClustererParams = SegmentClustererParams()):
         """Initializes the segment clusterer with the input segments and the semgment clusterer parameters."""
@@ -74,11 +75,10 @@ class SegmentClusterer:
     def cluster_segments(self) -> None:
         """Clusters the input segments :attr:`self.raw_segments` based on the parameters passed as argument.
         """
-        # Logger.debug("Clustering segments")
-        if self.params.cluster_type not in ["gmm", "knn"]:
-            # Logger.fatal("Invalid value for cluster type: {}".format(self.params.cluster_type))
-            raise ValueError("Invalid value for 'cluster_type': {} "
-                             "'cluster_type' should be in ['gmm', 'knn']".format(self.params.cluster_type))
+        logging.debug("Clustering segments")
+        if self.params.cluster_type not in self.clustering_types:
+            logging.fatal("Invalid value for cluster type: {}".format(self.params.cluster_type))
+            raise ValueError(f"Invalid value for 'cluster_type': {self.params.cluster_type} 'cluster_type' should be in {clustering_types}")
 
         centers = []
         angles = []
@@ -119,11 +119,11 @@ class SegmentClusterer:
         cluster_prediction = None
 
         if self.params.cluster_type == "knn":
-            # Logger.debug("Clustering segments using KNN")
+            logging.debug("Clustering segments using KNN")
             cluster_prediction = KMeans(n_clusters=self.params.num_clusters, n_init=self.params.num_init,
                                         random_state=0).fit_predict(features)
         elif self.params.cluster_type == "gmm":
-            # Logger.debug("Clustering segments using GMM")
+            logging.debug("Clustering segments using GMM")
             best_gmm = None
             lowest_bic = np.infty
             bic = []

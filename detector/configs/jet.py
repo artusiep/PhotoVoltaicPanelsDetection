@@ -3,7 +3,7 @@ from math import floor
 import numpy as np
 from cv2 import cv2
 
-from configs.abstract import Config
+from detector.configs.abstract import Config
 from thermography.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, \
     SegmentClustererParams, ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
 
