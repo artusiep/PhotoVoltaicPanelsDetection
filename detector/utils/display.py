@@ -8,7 +8,6 @@ import numpy as np
 __all__ = ["draw_intersections", "draw_motion", "draw_rectangles", "draw_segments",
            "random_color", "color_from_probabilities", "rectangle_annotated_photos"]
 
-from utils import rectangle_annotated_photos
 
 
 def draw_intersections(intersections: list, base_image: np.ndarray, windows_name: str):

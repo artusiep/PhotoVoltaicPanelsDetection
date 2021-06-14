@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 import cv2
@@ -125,7 +126,7 @@ class FramePreprocessor:
                     if v >= self.params.min_red_contour:
                         result_contours.append(contour)
                 if len(contours) > len(result_contours):
-                    print("Reduced number of contours")
+                    logging.info("Reduced number of contours")
 
                 mask = np.zeros_like(self.scaled_image)
                 cv2.drawContours(mask, result_contours, -1, (255), cv2.FILLED)

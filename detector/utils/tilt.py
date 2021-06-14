@@ -1,3 +1,5 @@
+import logging
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,8 +37,8 @@ def binarizeImage(RGB_image):
         image = rgb2gray(RGB_image)
         threshold = threshold_otsu(image)
         bina_image = image < threshold
-    except Exception:
-        print("This image is not RGB")
+    except Exception as e:
+        logging.error("This image is not RGB")
         return RGB_image
     return bina_image
 
@@ -156,5 +158,5 @@ def generalPipeline(img):
     resize_to_yolo(fixed, save=True)
 
 
-image_path = '../data/thermal/TEMP_DJI_1_R (521).JPG'
+image_path = '../../data/thermal/TEMP_DJI_1_R (521).JPG'
 generalPipeline(image_path)
