@@ -8,6 +8,7 @@ import numpy as np
 __all__ = ["draw_intersections", "draw_motion", "draw_rectangles", "draw_segments",
            "random_color", "color_from_probabilities", "rectangle_annotated_photos"]
 
+from detector.utils.utils import rectangle_annotated_photos
 
 
 def draw_intersections(intersections: list, base_image: np.ndarray, windows_name: str):
@@ -134,8 +135,11 @@ def color_from_probabilities(prob: np.ndarray) -> tuple:
     return (int(color[2]), int(color[0]), int(color[1]))
 
 
-def display_image_in_actual_size(base_image: np.ndarray, windows_name='default'):
-    base_image = cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB)
+def display_image_in_actual_size(base_image: np.ndarray, windows_name='default', rgb=False):
+    if rgb:
+        base_image = cv2.cvtColor(base_image, cv2.COLOR_RGBA2RGB)
+    else:
+        base_image = cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB)
     if base_image.shape[0] < 900 and base_image.shape[1] < 900:
         dpi = 80
     else:

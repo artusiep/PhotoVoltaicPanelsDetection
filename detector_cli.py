@@ -9,7 +9,8 @@ from detector.configs.abstract import Config
 from detector.detector import Detector
 from detector.labelers.abstract import RectangleLabeler
 from detector.logger import init_logger
-from detector.utils.utils import save_img, available_color_maps, get_color_map_by_name
+from detector.utils.utils import save_img, available_color_maps
+from detector.extractor.extractor import ThermalImageExtractor, ThermalImageNotFound
 from thermography.utils.cli import dir_path, extant_file
 
 RAW = 'raw'
@@ -49,7 +50,8 @@ helps = {
     'color-map': "Color map to which extracted of FLIR image is saved. Used for thresholding in preprocessing. "
                  "Used color aps from matplotlib library. "
                  "Available map: https://matplotlib.org/stable/tutorials/colors/colormaps.html",
-    'output-dir': "Directory to which extracted images are saved",
+    'output-dir': "Directory to which annotated images are saved",
+    'thermal-image-output': "Directory to which extracted images are saved",
     'preprocessed-size': "During preprocessing size of image can change. "
                          "If set, image will have preprocessed image size",
     'show-step-images': "If set step images of detection will be shown using matplotlib",
@@ -61,19 +63,25 @@ helps = {
 def parse_arguments():
     init_logger()
     parser = argparse.ArgumentParser(prog='PhotoVoltaic Panels Detector', description='')
-    parser.add_argument('-c', '--config', choices=Config.get_all_subclass(), required=True, help=helps['config'])
-    parser.add_argument('-l', '--labelers', choices=RectangleLabeler.get_all_subclass(), nargs='+',
-                        help=helps['labelers'])
-    parser.add_argument('-t', '--type', choices=image_types, default=THERMAL, help=helps['type'])
-    parser.add_argument('-cm', '--color-map', choices=available_color_maps(), default=get_color_map_by_name('jet'),
-                        nargs='+', metavar='', help=helps['color-map'])
-    parser.add_argument('-o', '--output-dir', type=dir_path, required=True, help=helps['output-dir'])
-    parser.add_argument('--preprocessed-size', action='store_true', help=helps['preprocessed-size'])
-    parser.add_argument('--show-step-images', action='store_true', help=helps['show-step-images'])
 
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-f', '--files', type=extant_file, nargs='+', help=helps['files'])
-    group.add_argument('-d', '--input-dir', type=dir_path, help=helps['input-dir'])
+    parser.add_argument('-t', '--type', choices=image_types, default=THERMAL, help=helps['type'])
+    extract_group = parser.add_argument_group('extract')
+    process_group = parser.add_argument_group('process')
+    input_files_group = parser.add_mutually_exclusive_group(required=True)
+
+    input_files_group.add_argument('-f', '--files', type=extant_file, nargs='+', help=helps['files'])
+    input_files_group.add_argument('-d', '--input-dir', type=dir_path, help=helps['input-dir'])
+
+    process_group.add_argument('-c', '--config', choices=Config.get_all_subclass(), required=True, help=helps['config'])
+    process_group.add_argument('-l', '--labelers', choices=RectangleLabeler.get_all_subclass(), nargs='+',
+                               help=helps['labelers'], default=[])
+    process_group.add_argument('-o', '--output-dir', type=dir_path, required=True, help=helps['output-dir'])
+    process_group.add_argument('--preprocessed-size', action='store_true', help=helps['preprocessed-size'])
+    process_group.add_argument('--show-step-images', action='store_true', help=helps['show-step-images'])
+
+    extract_group.add_argument('-cm', '--color-map', choices=available_color_maps(), default=['jet'],
+                               nargs='+', metavar='', help=helps['color-map'])
+    extract_group.add_argument('--thermal-image-output', type=dir_path, help=helps['thermal-image-output'])
 
     args = parser.parse_args()
 
@@ -83,8 +91,15 @@ def parse_arguments():
     else:
         files = args.files
 
-    # if args.type == RAW:
-    #     FlirImageExtractor(palettes=args.color_map)
+    if args.type == RAW:
+        thermal_files = []
+        for file in files:
+            try:
+                images, file_path = ThermalImageExtractor.extract_thermal_image(file, args.color_map)
+                thermal_files.extend(file_path)
+            except ThermalImageNotFound as e:
+                logging.warning(f"No thermal data found in {e.file_path}. Omitting")
+        files = thermal_files
 
     process(file_paths=files,
             config=Config.get_subclass_by_name(args.config),
