@@ -1,6 +1,8 @@
 import logging
 from abc import ABC
 
+from detector.utils.exit_code import ExitCode
+
 
 class PVPDBaseClass(ABC):
     @classmethod
@@ -18,5 +20,5 @@ class PVPDBaseClass(ABC):
         if len(config) != 1:
             logging.fatal(
                 f"{str(cls.__name__)} name needs to be unique. Wanted to use config with name '{name}'. But received {config}")
-            exit(1)
+            exit(ExitCode.PVPDBaseClassNotUnique)
         return config[0]

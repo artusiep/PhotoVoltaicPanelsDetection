@@ -94,7 +94,7 @@ class Detector:
 
         if len(centroids) >= 4:
             logging.warning(
-                f"Barely possible that there is {len(centroids)}. It's better to leave segments clusters as they are")
+                f"Barely possible that there is {len(centroids)} centroids. It's better to leave segments clusters as they are")
             return cluster_list
 
         column_clusterer = SegmentClustererParams(
