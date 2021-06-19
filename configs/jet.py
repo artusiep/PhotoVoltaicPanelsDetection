@@ -9,7 +9,7 @@ from thermography.detection import PreprocessingParams, EdgeDetectorParams, Segm
 
 
 class JetConfig(Config):
-    __image_scaling = 6
+    __image_scaling = 3
     preprocessing_params = PreprocessingParams(
         gaussian_blur=9,
         image_scaling=__image_scaling,
@@ -27,10 +27,10 @@ class JetConfig(Config):
     segment_detector_params = SegmentDetectorParams(
         d_rho=1,
         d_theta=np.pi / 180,
-        min_num_votes=75,
-        min_line_length=max(floor(50 * (__image_scaling - 2)), 50),
-        max_line_gap=50 * __image_scaling,
-        extension_pixels=15 * __image_scaling
+        min_num_votes=130,
+        min_line_length=max(floor(10 * (__image_scaling - 2)), 20),
+        max_line_gap=20 * __image_scaling,
+        extension_pixels=30 * __image_scaling
     )
     segment_clusterer_params = SegmentClustererParams(
         num_init=10,
@@ -42,8 +42,8 @@ class JetConfig(Config):
     )
     cluster_cleaning_params = ClusterCleaningParams(
         max_angle_variation_mean=np.pi / 180 * 20,
-        max_merging_angle=np.pi / 180 * 10,
-        max_endpoint_distance=35 * (__image_scaling)
+        max_merging_angle=np.pi / 180 * 40,
+        max_endpoint_distance=10 * (__image_scaling)
     )
     intersection_detector_params = IntersectionDetectorParams(
         angle_threshold=np.pi / 180 * 25
