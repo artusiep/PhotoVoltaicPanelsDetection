@@ -18,17 +18,17 @@ def draw_intersections(intersections: list, base_image: np.ndarray, windows_name
     :param base_image: Base image over which to render the intersections.
     :param windows_name: Title to give to the rendered image.
     """
-    mean_color = np.mean(base_image, axis=(0, 1))
+    image = np.copy(base_image)
+    mean_color = np.mean(image, axis=(0, 1))
     if mean_color[0] == mean_color[1] == mean_color[2]:
         mean_color = np.array([255, 255, 0])
     opposite_color = np.array([255, 255, 255]) - mean_color
     opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
     for intersection in intersections:
-        cv2.circle(img=base_image, center=(int(intersection[0]), int(intersection[1])), radius=30, color=opposite_color,
+        cv2.circle(img=image, center=(int(intersection[0]), int(intersection[1])), radius=30, color=opposite_color,
                    thickness=20, lineType=cv2.LINE_4)
 
-    display_image_in_actual_size(base_image, windows_name)
-    # cv2.imshow(windows_name, base_image)
+    display_image_in_actual_size(image, windows_name)
 
 
 def draw_motion(flow: np.ndarray, base_image: np.ndarray, windows_name: str, draw_mean_motion: bool = True, nums=10):
@@ -66,9 +66,6 @@ def draw_motion(flow: np.ndarray, base_image: np.ndarray, windows_name: str, dra
                             (0, 0, 255), 2, cv2.LINE_4)
 
     display_image_in_actual_size(base_image, windows_name)
-    # cv2.imshow(windows_name, base_image)
-
-# def draw_segements(segments: list, base_image: np.ndarray, windows_name: str):
 
 
 def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, render_indices: bool = True,
@@ -85,23 +82,25 @@ def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, ren
     :param render_indices: Boolean flag indicating whether to render the segment indices or not.
     :param colors: Color list to be used for segment rendering, such that segments belonging to the same cluster are of the same color.
     """
+    image = np.copy(base_image)
     if colors is None:
         # Fix colors for first two clusters, choose the next randomly.
         colors = [(29, 247, 240), (255, 180, 50)]
         for cluster_number in range(2, len(segments)):
             colors.append(random_color())
 
-    scaling_factor = ceil(base_image.shape[0] / 1000)
+    scaling_factor = ceil(image.shape[0] / 1000)
 
     for cluster, color in zip(segments, colors):
         for segment_index, segment in enumerate(cluster):
-            cv2.line(img=base_image, pt1=(segment[0], segment[1]), pt2=(segment[2], segment[3]),
+            cv2.line(img=image, pt1=(segment[0], segment[1]), pt2=(segment[2], segment[3]),
                      color=color, thickness=2*scaling_factor, lineType=cv2.LINE_AA)
             if render_indices:
-                cv2.putText(base_image, str(segment_index), (segment[0], segment[1]), cv2.FONT_HERSHEY_PLAIN, 0.8*scaling_factor*2,
-                            (255, 255, 255), 1*scaling_factor)
+                cv2.putText(image, str(segment_index), (segment[0], segment[1]), cv2.FONT_HERSHEY_PLAIN,
+                            0.8 * scaling_factor * 2,
+                            (255, 255, 255), 1 * scaling_factor)
 
-    display_image_in_actual_size(base_image, windows_name)
+    display_image_in_actual_size(image, windows_name)
 
 
 def draw_rectangles(rectangles: list, base_image: np.ndarray, windows_name: str):
@@ -143,7 +142,7 @@ def display_image_in_actual_size(base_image: np.ndarray, windows_name='default',
     if base_image.shape[0] < 900 and base_image.shape[1] < 900:
         dpi = 80
     else:
-        dpi = 80*4
+        dpi = 80 * 4
     height, width, depth = base_image.shape
 
     # What size does the figure need to be in inches to fit the image?

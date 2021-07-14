@@ -1,6 +1,7 @@
 import logging
 from typing import Tuple, Any, Type, List
 
+import numpy as np
 from cv2 import cv2
 from matplotlib import pyplot as plt
 
@@ -11,12 +12,13 @@ from detector.labelers.yolo import YoloRectangleLabeler
 from detector.utils.display import draw_rectangles, draw_intersections, draw_segments, display_image_in_actual_size
 from detector.utils.utils import read_bgr_img, rectangle_annotated_photos
 from thermography.detection import RectangleDetector, IntersectionDetector, \
-    SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, EdgeDetectorParams, SegmentClustererParams
+    SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, EdgeDetectorParams
+from thermography.utils import scale_image
 
 
 class Detector:
     @staticmethod
-    def preprocess_frame_functional(frame, params, silent) -> Tuple[Any, Any]:
+    def preprocess_frame_functional(frame, params, silent) -> Tuple[Any, Any, Any]:
         """Preprocesses the frame stored at :attr:`self.last_input_frame` by scaling, rotating and computing the attention regions.
         See Also:
             Module :mod:`~thermography.detection.preprocessing` for more details.
@@ -27,8 +29,9 @@ class Detector:
         last_scaled_frame = frame_preprocessor.scaled_image
         last_preprocessed_image = frame_preprocessor.preprocessed_image
         last_attention_image = frame_preprocessor.attention_image
+        mask = frame_preprocessor.mask
         if not silent:
-            plt.subplot(221), plt.imshow(cv2.cvtColor(last_scaled_frame_rgb, cv2.COLOR_BGR2RGB))
+            plt.subplot(231), plt.imshow(cv2.cvtColor(last_scaled_frame_rgb, cv2.COLOR_BGR2RGB))
             plt.title('last_scaled_frame_rgb'), plt.xticks([]), plt.yticks([])
 
             plt.subplot(222), plt.imshow(cv2.cvtColor(last_scaled_frame, cv2.COLOR_BGR2RGB))
@@ -42,10 +45,10 @@ class Detector:
 
             plt.show()
 
-        return last_preprocessed_image, last_scaled_frame_rgb
+        return last_preprocessed_image, last_scaled_frame_rgb, mask
 
     @staticmethod
-    def detect_edges_functional(frame, params: EdgeDetectorParams, silent=False) -> Any:
+    def detect_edges_functional(frame, params: Type[EdgeDetectorParams], silent=False) -> Any:
         """Detects the edges in the :attr:`self.last_preprocessed_image` using the parameters in :attr:`self.edge_detection_parameters`.
 
         See Also:
@@ -84,43 +87,43 @@ class Detector:
             segment_clusterer.clean_clusters(mean_angles=mean_angles, params=cleaning_params)
         return segment_clusterer.cluster_list
 
-    @staticmethod
-    def cluster_segments_by_contours(preprocessed, cluster_list, cluster_cleaning_params):
-        contours, hierarchy = cv2.findContours(preprocessed, cv2.RETR_TREE, cv2.INTERSECT_FULL)
-        if len(contours) <= 1:
-            logging.info("No need to cluster by contours")
-        moments = [cv2.moments(contour) for contour in contours]
-        centroids = [(int(M['m10'] / M['m00']), int(M['m01'] / M['m00'])) for M in moments]
-
-        if len(centroids) >= 4:
-            logging.warning(
-                f"Barely possible that there is {len(centroids)} centroids. It's better to leave segments clusters as they are")
-            return cluster_list
-
-        column_clusterer = SegmentClustererParams(
-            num_init=10,
-            num_clusters=len(centroids),
-            swipe_clusters=True,
-            use_angles=False,
-            centroids=centroids
-        )
-        if len(cluster_list[0]) > len(cluster_list[1]):
-            columns_cluster_list = Detector.cluster_segments_functional(
-                cluster_list[0],
-                params=column_clusterer,
-                cleaning_params=cluster_cleaning_params
-            )
-            del cluster_list[0]
-            cluster_list.extend(columns_cluster_list)
-        else:
-            columns_cluster_list = Detector.cluster_segments_functional(
-                cluster_list[1],
-                params=column_clusterer,
-                cleaning_params=cluster_cleaning_params
-            )
-            del cluster_list[1]
-            cluster_list.extend(columns_cluster_list)
-        return cluster_list
+    # @staticmethod
+    # def cluster_segments_by_contours(preprocessed, cluster_list, cluster_cleaning_params):
+    #     contours, hierarchy = cv2.findContours(preprocessed, cv2.RETR_TREE, cv2.INTERSECT_FULL)
+    #     display_image_in_actual_size(preprocessed)
+    #     if len(contours) <= 1:
+    #         logging.info("No need to cluster by contours")
+    #     moments = [cv2.moments(contour) for contour in contours]
+    #     centroids = [(int(M['m10'] / M['m00']), int(M['m01'] / M['m00'])) for M in moments]
+    #
+    #     if len(centroids) >= 4:
+    #         logging.warning(
+    #             f"Barely possible that there is {len(centroids)} centroids. It's better to leave segments clusters as they are")
+    #         return cluster_list
+    #
+    #     column_clusterer = SegmentClustererParams(
+    #         num_init=10, num_clusters=len(centroids),
+    #         swipe_clusters=True,
+    #         use_angles=False,
+    #         centroids=centroids
+    #     )
+    #     if len(cluster_list[0]) > len(cluster_list[1]):
+    #         columns_cluster_list = Detector.cluster_segments_functional(
+    #             cluster_list[0],
+    #             params=column_clusterer,
+    #             cleaning_params=cluster_cleaning_params
+    #         )
+    #         del cluster_list[0]
+    #         cluster_list.extend(columns_cluster_list)
+    #     else:
+    #         columns_cluster_list = Detector.cluster_segments_functional(
+    #             cluster_list[1],
+    #             params=column_clusterer,
+    #             cleaning_params=cluster_cleaning_params
+    #         )
+    #         del cluster_list[1]
+    #         cluster_list.extend(columns_cluster_list)
+    #     return cluster_list
 
     @staticmethod
     def detect_intersections_functional(cluster_list, params) -> Any:
@@ -155,6 +158,30 @@ class Detector:
         return labeler.labels_collector
 
     @staticmethod
+    def process_panel(contours, contour_id, preprocessed, last_scaled_frame_rgb, config, silent):
+        mask_p = np.zeros_like(preprocessed)
+        cv2.drawContours(mask_p, contours, contour_id, 255, cv2.FILLED)
+        roi_image = cv2.bitwise_and(mask_p, preprocessed)
+
+        edge_image = Detector.detect_edges_functional(roi_image, config.edge_detector_params, silent)
+        segments = Detector.detect_segments_functional(edge_image, config.segment_detector_params)
+
+        general_cluster_list = Detector.cluster_segments_functional(
+            segments,
+            params=config.segment_clusterer_params,
+            cleaning_params=config.cluster_cleaning_params)
+
+        intersections = Detector.detect_intersections_functional(general_cluster_list,
+                                                                 params=config.intersection_detector_params)
+        if not silent:
+            display_image_in_actual_size(roi_image)
+            display_image_in_actual_size(edge_image)
+            draw_segments(general_cluster_list, last_scaled_frame_rgb, "Segments")
+            draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
+
+        return Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
+
+    @staticmethod
     def main(image_path, config: Config, labelers: List[Type[RectangleLabeler]] = None, silent: bool = True,
              downscale_output: bool = True):
         img = read_bgr_img(image_path)
@@ -164,33 +191,31 @@ class Detector:
         #     undistorted_image = cv2.undistort(src=distorted_image)
         # else:
         #     undistorted_image = distorted_image
-        preprocessed, last_scaled_frame_rgb = Detector.preprocess_frame_functional(img, config.preprocessing_params,
-                                                                                   silent)
-        edge_image = Detector.detect_edges_functional(preprocessed, config.edge_detector_params, silent)
-        segments = Detector.detect_segments_functional(edge_image, config.segment_detector_params)
+        preprocessed, last_scaled_frame_rgb, mask = Detector.preprocess_frame_functional(img,
+                                                                                         config.preprocessing_params,
+                                                                                         silent)
 
-        if not silent:
-            display_image_in_actual_size(preprocessed)
-            display_image_in_actual_size(edge_image)
+        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.INTERSECT_FULL)
+        last_scaled_frame_rgb = scale_image(last_scaled_frame_rgb, config.edge_detector_params.image_scaling)
 
-        general_cluster_list = Detector.cluster_segments_functional(
-            segments,
-            params=config.segment_clusterer_params,
-            cleaning_params=config.cluster_cleaning_params)
+        rectangles = []
 
-        contours_clustered_cluster_list = Detector.cluster_segments_by_contours(preprocessed, general_cluster_list,
-                                                                                config.cluster_cleaning_params)
+        for contour_id, _ in enumerate(contours):
+            rectangles.extend(Detector.process_panel(
+                contours,
+                contour_id,
+                preprocessed,
+                last_scaled_frame_rgb,
+                config,
+                silent)
+            )
 
-        intersections = Detector.detect_intersections_functional(contours_clustered_cluster_list,
-                                                                 params=config.intersection_detector_params)
-        rectangles = Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
         for labeler in labelers:
             Detector.get_rectangles_labels(rectangles, labeler, preprocessed, image_path)
 
         if not silent:
-            draw_segments(general_cluster_list, last_scaled_frame_rgb, "Segments", render_indices=True)
-            draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
             draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")
+
         annotated_photo = rectangle_annotated_photos(rectangles, last_scaled_frame_rgb)
         if downscale_output:
             annotated_photo = cv2.resize(annotated_photo, (img.shape[1], img.shape[0]))

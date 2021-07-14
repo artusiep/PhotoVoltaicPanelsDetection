@@ -4,8 +4,6 @@ import numpy as np
 
 from thermography.utils.geometry import aspect_ratio, area, sort_rectangle
 
-# from simple_logger import Logger
-
 __all__ = ["RectangleDetector", "RectangleDetectorParams"]
 
 

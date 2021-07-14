@@ -87,7 +87,7 @@ def parse_arguments():
 
     if args.input_dir:
         files = glob.glob(f"{args.input_dir}/*.JPG")
-        files = files.extend(glob.glob(f"{args.input_dir}/*.jpg"))
+        files.extend(glob.glob(f"{args.input_dir}/*.jpg"))
     else:
         files = args.files
 

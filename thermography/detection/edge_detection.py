@@ -6,7 +6,9 @@ import numpy as np
 
 __all__ = ["EdgeDetectorParams", "EdgeDetector"]
 
-from typing import Tuple
+from typing import Tuple, Type
+
+from thermography.utils import scale_image
 
 
 @dataclass
@@ -22,6 +24,7 @@ class EdgeDetectorParams:
         :param kernel_shape: Kernel shape to use when performing dilation and erosion of binary edge image. One of MORPH_RECT, MORPH_CROSS, MORPH_ELLIPSE
         :param dilation_steps: Number of dilation steps to take before skeletonization.
     """
+    image_scaling: int = 3
     sigma: int = 0.33
     hysteresis_min_thresh: int = 50
     hysteresis_max_thresh: int = 100
@@ -35,6 +38,7 @@ class EdgeDetectorParams:
     def __post_init__(self):
         self.kernel = cv2.getStructuringElement(self.kernel_shape, self.kernel_size)
 
+
 class EdgeDetector:
     """Class responsible for detecting edges in greyscale images.
     The approach taken to detect edges in the input greyscale image is the following:
@@ -45,7 +49,7 @@ class EdgeDetector:
 
     """
 
-    def __init__(self, input_image: np.ndarray, params: EdgeDetectorParams):
+    def __init__(self, input_image: np.ndarray, params: Type[EdgeDetectorParams]):
         """
         :param input_image: Input greyscale image where edges must be detected.
         :param params: Parameters used for edge detection.
@@ -55,15 +59,63 @@ class EdgeDetector:
 
         self.edge_image = None
 
+    @staticmethod
+    def apply_brightness_contrast(input_img, brightness=0, contrast=0):
+        if brightness != 0:
+            if brightness > 0:
+                shadow = brightness
+                highlight = 255
+            else:
+                shadow = 0
+                highlight = 255 + brightness
+            alpha_b = (highlight - shadow) / 255
+            gamma_b = shadow
+
+            buf = cv2.addWeighted(input_img, alpha_b, input_img, 0, gamma_b)
+        else:
+            buf = input_img.copy()
+
+        if contrast != 0:
+            f = 131 * (contrast + 127) / (127 * (131 - contrast))
+            alpha_c = f
+            gamma_c = 127 * (1 - f)
+
+            buf = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
+        return buf
+
+    def strengthen_edges(self, input_image):
+        # blurring (probably could be improved, reduced to one)
+        blurred_image = cv2.bilateralFilter(input_image, 3, 200, 200)
+        blurred_image = cv2.GaussianBlur(blurred_image, (7, 7), 0)
+
+        # adaptive thresholding
+        adaptive_threshold = cv2.adaptiveThreshold(blurred_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                   cv2.THRESH_BINARY, 11, 2)
+        denoised_image = cv2.fastNlMeansDenoising(adaptive_threshold, 11, 31, 9)  # 30, 7, 25
+
+        # contrasting
+        brightness = 0
+        contrast = 64  # contrast_const
+
+        contrasted_image = self.apply_brightness_contrast(denoised_image, brightness, contrast)
+        return contrasted_image
+
     def detect(self) -> None:
         """Detects the edges in the image passed to the constructor using the parameters passed to the constructor.
         """
-        canny = cv2.Canny(image=self.input_image, threshold1=self.params.hysteresis_min_thresh,
+
+        strengthen_edges_img = self.strengthen_edges(self.input_image)
+        _, global_thresh = cv2.threshold(self.input_image, 0, 255, cv2.THRESH_BINARY)
+        strengthened_edges_image = cv2.bitwise_and(strengthen_edges_img, global_thresh)
+
+        scaled_strengthened_edges_image = scale_image(strengthened_edges_image, self.params.image_scaling)
+
+        blurred_image = cv2.bilateralFilter(scaled_strengthened_edges_image, 9, 200, 200)
+        canny = cv2.Canny(image=blurred_image, threshold1=self.params.hysteresis_min_thresh,
                           threshold2=self.params.hysteresis_max_thresh, apertureSize=3)
         logging.debug("Canny edges computed")
 
-        dilated = cv2.dilate(canny, self.params.kernel,
-                             iterations=self.params.dilation_steps)
+        dilated = cv2.dilate(canny, (3, 3), iterations=self.params.dilation_steps)
         logging.debug("Dilate canny edges with {} steps".format(self.params.dilation_steps))
 
         size = np.size(dilated)
@@ -72,10 +124,13 @@ class EdgeDetector:
         img = dilated
         done = False
 
+        kernel_size = (7, 7)
+        kernel_shape = cv2.MORPH_CROSS
+        kernel = cv2.getStructuringElement(kernel_shape, kernel_size)
         while not done:
             logging.debug("Eroding canny edges")
-            eroded = cv2.erode(img, self.params.kernel)
-            temp = cv2.dilate(eroded, self.params.kernel)
+            eroded = cv2.erode(img, kernel)
+            temp = cv2.dilate(eroded, kernel)
             temp = cv2.subtract(img, temp)
             skel = cv2.bitwise_or(skel, temp)
             img = eroded.copy()
