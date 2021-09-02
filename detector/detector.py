@@ -87,44 +87,6 @@ class Detector:
             segment_clusterer.clean_clusters(mean_angles=mean_angles, params=cleaning_params)
         return segment_clusterer.cluster_list
 
-    # @staticmethod
-    # def cluster_segments_by_contours(preprocessed, cluster_list, cluster_cleaning_params):
-    #     contours, hierarchy = cv2.findContours(preprocessed, cv2.RETR_TREE, cv2.INTERSECT_FULL)
-    #     display_image_in_actual_size(preprocessed)
-    #     if len(contours) <= 1:
-    #         logging.info("No need to cluster by contours")
-    #     moments = [cv2.moments(contour) for contour in contours]
-    #     centroids = [(int(M['m10'] / M['m00']), int(M['m01'] / M['m00'])) for M in moments]
-    #
-    #     if len(centroids) >= 4:
-    #         logging.warning(
-    #             f"Barely possible that there is {len(centroids)} centroids. It's better to leave segments clusters as they are")
-    #         return cluster_list
-    #
-    #     column_clusterer = SegmentClustererParams(
-    #         num_init=10, num_clusters=len(centroids),
-    #         swipe_clusters=True,
-    #         use_angles=False,
-    #         centroids=centroids
-    #     )
-    #     if len(cluster_list[0]) > len(cluster_list[1]):
-    #         columns_cluster_list = Detector.cluster_segments_functional(
-    #             cluster_list[0],
-    #             params=column_clusterer,
-    #             cleaning_params=cluster_cleaning_params
-    #         )
-    #         del cluster_list[0]
-    #         cluster_list.extend(columns_cluster_list)
-    #     else:
-    #         columns_cluster_list = Detector.cluster_segments_functional(
-    #             cluster_list[1],
-    #             params=column_clusterer,
-    #             cleaning_params=cluster_cleaning_params
-    #         )
-    #         del cluster_list[1]
-    #         cluster_list.extend(columns_cluster_list)
-    #     return cluster_list
-
     @staticmethod
     def detect_intersections_functional(cluster_list, params) -> Any:
         """Detects the intersections between the segments in :attr:`self.last_cluster_list` according to the parameters in :attr:`self.intersection_detection_parameters`.

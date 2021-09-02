@@ -45,6 +45,8 @@ def read_bgr_img(path):
 
 
 def save_img(img, path):
+    if not path.lower().endswith(('.jpg', '.jpeg')):
+        path = path + '.jpg'
     catalogues = "/".join(path.split('/')[:-1])
     try:
         os.makedirs(catalogues)

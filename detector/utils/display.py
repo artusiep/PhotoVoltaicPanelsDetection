@@ -5,13 +5,13 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-__all__ = ["draw_intersections", "draw_motion", "draw_rectangles", "draw_segments",
+__all__ = ["draw_intersections", "draw_motion", "draw_rectangles", "draw_segments_raw", "draw_segments",
            "random_color", "color_from_probabilities", "rectangle_annotated_photos"]
 
-from detector.utils.utils import rectangle_annotated_photos
+from detector.utils.utils import rectangle_annotated_photos, save_img
 
 
-def draw_intersections(intersections: list, base_image: np.ndarray, windows_name: str):
+def draw_intersections(intersections: dict, base_image: np.ndarray, windows_name: str):
     """Draws the intersections contained in the first parameter onto the base image passed as second parameter and displays the image using the third parameter as title.
 
     :param intersections: List of intersection coordinates.
@@ -24,9 +24,11 @@ def draw_intersections(intersections: list, base_image: np.ndarray, windows_name
         mean_color = np.array([255, 255, 0])
     opposite_color = np.array([255, 255, 255]) - mean_color
     opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
-    for intersection in intersections:
-        cv2.circle(img=image, center=(int(intersection[0]), int(intersection[1])), radius=30, color=opposite_color,
-                   thickness=20, lineType=cv2.LINE_4)
+    for intersection in intersections.values():
+        for elem in intersection.values():
+            for x in elem.values():
+                cv2.circle(img=image, center=(int(x[0]), int(x[1])), radius=20, color=opposite_color,
+                   thickness=10, lineType=cv2.LINE_4)
 
     display_image_in_actual_size(image, windows_name)
 
@@ -68,6 +70,28 @@ def draw_motion(flow: np.ndarray, base_image: np.ndarray, windows_name: str, dra
     display_image_in_actual_size(base_image, windows_name)
 
 
+def draw_segments_raw(segments: list, base_image: np.ndarray, windows_name: str):
+    """Draws the segments contained in the first parameter onto the base image passed as second parameter.
+
+    This function displays the image using the third parameter as title.
+    The indices associated to the segments are rendered on the image depending on 'render_indices'.
+    A list of colors can be passed as argument to specify the colors to be used for different segment clusters.
+
+    :param segments: List of segment clusters.
+    :param base_image: Base image over which to render the segments.
+    :param windows_name: Title to give to the rendered image.
+    """
+    image = np.copy(base_image)
+
+    scaling_factor = ceil(image.shape[0] / 1000)
+    color = (255, 0, 0)
+    for segment in segments:
+        cv2.line(img=image, pt1=(segment[0], segment[1]), pt2=(segment[2], segment[3]),
+                 color=color, thickness=2 * scaling_factor, lineType=cv2.LINE_AA)
+
+    display_image_in_actual_size(image, windows_name)
+
+
 def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, render_indices: bool = True,
                   colors: list = None):
     """Draws the segments contained in the first parameter onto the base image passed as second parameter.
@@ -94,7 +118,7 @@ def draw_segments(segments: list, base_image: np.ndarray, windows_name: str, ren
     for cluster, color in zip(segments, colors):
         for segment_index, segment in enumerate(cluster):
             cv2.line(img=image, pt1=(segment[0], segment[1]), pt2=(segment[2], segment[3]),
-                     color=color, thickness=2*scaling_factor, lineType=cv2.LINE_AA)
+                     color=color, thickness=2 * scaling_factor, lineType=cv2.LINE_AA)
             if render_indices:
                 cv2.putText(image, str(segment_index), (segment[0], segment[1]), cv2.FONT_HERSHEY_PLAIN,
                             0.8 * scaling_factor * 2,
@@ -154,6 +178,8 @@ def display_image_in_actual_size(base_image: np.ndarray, windows_name='default',
 
     # Hide spines, ticks, etc.
     ax.axis('off')
+    save_img(cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB),
+             '/Users/artursiepietwoski/Developer/Private/PhotoVoltaicPanelsDetection/photos/' + windows_name)
 
     # Display the image.
     ax.imshow(base_image)
