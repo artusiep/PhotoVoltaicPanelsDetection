@@ -1,0 +1,5 @@
+./detector_cli.py -c PlasmaConfig --type raw -cm plasma -f "experiments/data/raw/DJI_1_R (125).JPG" -o experiments/data/result -l PickleLabeler
+
+./detector_cli.py -c PlasmaConfig --type raw -cm plasma -d experiments/data/raw -o experiments/data/result -l PickleLabeler YoloRectangleLabeler --thermal-image-output experiments/data/thermal
+
+./detector_cli.py -c PlasmaConfig --type raw -cm plasma -f  "experiments/data/raw/DJI_1_R (125).JPG" -o experiments/data/result -l PickleLabeler YoloRectangleLabeler --thermal-image-output experiments/data/thermal

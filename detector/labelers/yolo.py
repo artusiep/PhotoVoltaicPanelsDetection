@@ -36,7 +36,7 @@ class YoloRectangleLabeler(RectangleLabeler):
 
         if not self.labeled:
             self.label_image()
-        root, ext = os.path.splitext(self.image_path)
+        root, ext = os.path.splitext(self.label_path)
         file_name = f'{root}.{self.extension}'
         with open(file_name, "w+") as label_file:
             labels_formatted = self.__get_yolo_labels()

@@ -7,10 +7,10 @@ import os
 
 from detector.configs.abstract import Config
 from detector.detector import Detector
+from detector.extractor.extractor import ThermalImageExtractor
 from detector.labelers.abstract import RectangleLabeler
 from detector.logger import init_logger
 from detector.utils.utils import save_img, available_color_maps
-from detector.extractor.extractor import ThermalImageExtractor, ThermalImageNotFound
 from thermography.utils.cli import dir_path, extant_file
 
 RAW = 'raw'
@@ -18,24 +18,26 @@ THERMAL = 'thermal'
 image_types = (THERMAL, RAW)
 
 
-def process(file_paths, config, output_dir, labelers, silent, downscale):
-    logging.info(f"Annotation of images {file_paths} started. Result will be saved to {output_dir}.")
-    for index, file_path in enumerate(file_paths):
-        output_path = f"{output_dir}/{os.path.basename(file_path)}"
-        logging.info(f"Annotation of img {file_path} started. Result will be saved to {output_path}. "
-                     f"Run index {index} of {len(file_paths)}")
-        try:
-            annotated_img = Detector.main(os.path.abspath(file_path),
-                                          config=config,
-                                          labelers=labelers,
-                                          silent=silent,
-                                          downscale_output=downscale)
-        except Exception as e:
-            logging.error(f"Annotation of img {file_path} failed with: {e}")
-            continue
+def process(file_paths, config, output_dir, labelers, silent, downscale, labels_paths=None):
+    logging.info(f"Annotation of images started. Result will be saved to '{output_dir}'.")
+    for index, multi_color_file_paths in enumerate(file_paths):
+        for subindex, file_path in enumerate(multi_color_file_paths):
+            output_path = f"{output_dir}/{os.path.basename(file_path)}"
+            logging.info(f"Annotation of img '{file_path}' started. Result will be saved to '{output_path}'. "
+                         f"Run index {index}.{subindex}.")
+            try:
+                annotated_img = Detector.main(os.path.abspath(file_path),
+                                              config=config,
+                                              labelers=labelers,
+                                              labels_path=output_path,
+                                              silent=silent,
+                                              downscale_output=downscale)
+            except Exception as e:
+                logging.error(f"Annotation of img {file_path} failed with: {e}")
+                continue
 
-        save_img(annotated_img, output_path)
-    logging.info(f"Image annotation. Finished")
+            save_img(annotated_img, output_path)
+    logging.info(f"All image annotation. Finished")
 
 
 helps = {
@@ -90,15 +92,11 @@ def parse_arguments():
         files.extend(glob.glob(f"{args.input_dir}/*.jpg"))
     else:
         files = args.files
+    files = iter(files)
 
     if args.type == RAW:
-        thermal_files = []
-        for file in files:
-            try:
-                images, file_path = ThermalImageExtractor.extract_thermal_image(file, args.color_map)
-                thermal_files.extend(file_path)
-            except ThermalImageNotFound as e:
-                logging.warning(f"No thermal data found in {e.file_path}. Omitting")
+        thermal_files = (ThermalImageExtractor.get_thermal_image_file_path(file, args.color_map, args.thermal_image_output) for file in files)
+
         files = thermal_files
 
     process(file_paths=files,

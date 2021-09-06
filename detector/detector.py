@@ -6,9 +6,7 @@ from cv2 import cv2
 from matplotlib import pyplot as plt
 
 from detector.configs.abstract import Config
-from detector.configs.test_jet import TestJetConfig
 from detector.labelers.abstract import RectangleLabeler
-from detector.labelers.yolo import YoloRectangleLabeler
 from detector.utils.display import draw_rectangles, draw_intersections, draw_segments, display_image_in_actual_size
 from detector.utils.utils import read_bgr_img, rectangle_annotated_photos
 from thermography.detection import RectangleDetector, IntersectionDetector, \
@@ -110,12 +108,16 @@ class Detector:
         return last_rectangles
 
     @staticmethod
-    def get_rectangles_labels(rectangles, rectangle_labeler: Type[RectangleLabeler], preprocessed_image,
-                              image_path) -> Any:
+    def get_rectangles_labels(rectangles: List[np.ndarray], rectangle_labeler: Type[RectangleLabeler],
+                              preprocessed_image: np.ndarray, edge_images: List[np.ndarray], label_path: str) -> Any:
         """Create label files using labeler based on detected rectangles."""
-        labeler = rectangle_labeler(rectangles=rectangles, preprocessed_image=preprocessed_image, image_path=image_path)
-        label_file = labeler.create_label_file()
-        logging.info(f"Created label file: {label_file}")
+        labeler = rectangle_labeler(rectangles=rectangles, preprocessed_image=preprocessed_image, label_path=label_path,
+                                    edge_images=edge_images)
+        if label_path:
+            label_file = labeler.create_label_file()
+            logging.info(f"Created label file: {label_file}")
+        else:
+            logging.info(f"Cannot create label file. Parameter label_path not provided")
 
         return labeler.labels_collector
 
@@ -141,11 +143,11 @@ class Detector:
             draw_segments(general_cluster_list, last_scaled_frame_rgb, "Segments")
             draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
 
-        return Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
+        return Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params), edge_image
 
     @staticmethod
-    def main(image_path, config: Config, labelers: List[Type[RectangleLabeler]] = None, silent: bool = True,
-             downscale_output: bool = True):
+    def main(image_path, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
+             silent: bool = True, downscale_output: bool = True):
         img = read_bgr_img(image_path)
 
         # distorted_image = img
@@ -161,19 +163,21 @@ class Detector:
         last_scaled_frame_rgb = scale_image(last_scaled_frame_rgb, config.edge_detector_params.image_scaling)
 
         rectangles = []
+        edge_images = []
 
         for contour_id, _ in enumerate(contours):
-            rectangles.extend(Detector.process_panel(
+            contour_rectangles, edge_image = Detector.process_panel(
                 contours,
                 contour_id,
                 preprocessed,
                 last_scaled_frame_rgb,
                 config,
                 silent)
-            )
+            rectangles.extend(contour_rectangles)
+            edge_images.append(edge_image)
 
         for labeler in labelers:
-            Detector.get_rectangles_labels(rectangles, labeler, preprocessed, image_path)
+            Detector.get_rectangles_labels(rectangles, labeler, preprocessed, edge_images, labels_path)
 
         if not silent:
             draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")
@@ -182,8 +186,3 @@ class Detector:
         if downscale_output:
             annotated_photo = cv2.resize(annotated_photo, (img.shape[1], img.shape[0]))
         return annotated_photo
-
-
-if __name__ == '__main__':
-    Detector.main('../data/thermal/TEMP_DJI_8_R (286).JPG', TestJetConfig(), labeler=[YoloRectangleLabeler],
-                  silent=False)

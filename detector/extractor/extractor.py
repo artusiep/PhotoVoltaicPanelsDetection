@@ -24,11 +24,19 @@ class ThermalImageNotFound(ThermalImageExtractorException):
 
 
 class ThermalImageExtractor:
-    @staticmethod
-    def extract_thermal_image(file_path: str, color_maps: list,
-                              output_dir: str = f'{tempfile.gettempdir()}/pvpd',
-                              display_photos: bool = False):
+    @classmethod
+    def get_thermal_image_file_path(cls, file_path: str, color_maps: list,
+                                    output_dir: str = f'{tempfile.gettempdir()}/pvpd',
+                                    display_photos: bool = False):
+        try:
+            return cls._extract_thermal_image(file_path, color_maps, output_dir, display_photos)[1]
+        except ThermalImageNotFound as e:
+            logging.warning(f"No thermal data found in {e.file_path}. Omitting")
 
+    @staticmethod
+    def _extract_thermal_image(file_path: str, color_maps: list,
+                               output_dir: str = f'{tempfile.gettempdir()}/pvpd',
+                               display_photos: bool = False):
         thermal_img_bytes = subprocess.check_output([exiftool_path, "-RawThermalImage", "-b", file_path])
         if len(thermal_img_bytes) == 0:
             raise ThermalImageNotFound(file_path)

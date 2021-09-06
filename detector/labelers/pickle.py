@@ -9,8 +9,8 @@ class PickleLabeler(RectangleLabeler):
 
     def __format_labels(self) -> dict:
         return {
-            'image_path': self.image_path,
-            'abs_image_path': os.path.abspath(self.image_path),
+            'image_path': self.label_path,
+            'abs_image_path': os.path.abspath(self.label_path),
             'rectangles': self.labels_collector
         }
 
@@ -22,7 +22,7 @@ class PickleLabeler(RectangleLabeler):
     def create_label_file(self):
         if not self.labeled:
             self.label_image()
-        root, ext = os.path.splitext(self.image_path)
+        root, ext = os.path.splitext(self.label_path)
         file_name = f'{root}.{self.extension}'
         with open(file_name, 'wb') as label_file:
             data = self.__format_labels()
