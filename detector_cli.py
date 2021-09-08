@@ -18,9 +18,11 @@ THERMAL = 'thermal'
 image_types = (THERMAL, RAW)
 
 
-def process(file_paths, config, output_dir, labelers, silent, downscale, labels_paths=None):
+def process(file_paths, config, output_dir, labelers, silent, downscale):
     logging.info(f"Annotation of images started. Result will be saved to '{output_dir}'.")
     for index, multi_color_file_paths in enumerate(file_paths):
+        if multi_color_file_paths is None:
+            logging.warning("No thermal image provided. Cannot proceed with PV panels detection.")
         for subindex, file_path in enumerate(multi_color_file_paths):
             output_path = f"{output_dir}/{os.path.basename(file_path)}"
             logging.info(f"Annotation of img '{file_path}' started. Result will be saved to '{output_path}'. "
@@ -96,7 +98,6 @@ def parse_arguments():
 
     if args.type == RAW:
         thermal_files = (ThermalImageExtractor.get_thermal_image_file_path(file, args.color_map, args.thermal_image_output) for file in files)
-
         files = thermal_files
 
     process(file_paths=files,

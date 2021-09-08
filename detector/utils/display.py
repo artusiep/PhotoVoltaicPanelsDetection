@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 __all__ = ["draw_intersections", "draw_motion", "draw_rectangles", "draw_segments_raw", "draw_segments",
-           "random_color", "color_from_probabilities", "rectangle_annotated_photos"]
+           "random_color", "color_from_probabilities", "rectangle_annotated_photos", "display_image_in_actual_size"]
 
 from detector.utils.utils import rectangle_annotated_photos, save_img
 

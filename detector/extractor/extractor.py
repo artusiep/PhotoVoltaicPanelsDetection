@@ -25,9 +25,10 @@ class ThermalImageNotFound(ThermalImageExtractorException):
 
 class ThermalImageExtractor:
     @classmethod
-    def get_thermal_image_file_path(cls, file_path: str, color_maps: list,
-                                    output_dir: str = f'{tempfile.gettempdir()}/pvpd',
+    def get_thermal_image_file_path(cls, file_path: str, color_maps: list, output_dir: str,
                                     display_photos: bool = False):
+        if output_dir is None:
+            output_dir = f'{tempfile.gettempdir()}/pvpd'
         try:
             return cls._extract_thermal_image(file_path, color_maps, output_dir, display_photos)[1]
         except ThermalImageNotFound as e:
