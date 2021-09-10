@@ -104,15 +104,14 @@ class Detector:
             Module :mod:`~thermography.detection.rectangle_detection` for more details."""
         rectangle_detector = RectangleDetector(input_intersections=intersections, params=params)
         rectangle_detector.detect()
-        last_rectangles = rectangle_detector.rectangles
-        return last_rectangles
+        rectangles = rectangle_detector.rectangles
+        return rectangles
 
     @staticmethod
     def get_rectangles_labels(rectangles: List[np.ndarray], rectangle_labeler: Type[RectangleLabeler],
-                              preprocessed_image: np.ndarray, edge_images: List[np.ndarray], label_path: str) -> Any:
+                              preprocessed_image: np.ndarray, label_path: str) -> Any:
         """Create label files using labeler based on detected rectangles."""
-        labeler = rectangle_labeler(rectangles=rectangles, preprocessed_image=preprocessed_image, label_path=label_path,
-                                    edge_images=edge_images)
+        labeler = rectangle_labeler(rectangles=rectangles, preprocessed_image=preprocessed_image, label_path=label_path)
         if label_path:
             label_file = labeler.create_label_file()
             logging.info(f"Created label file: {label_file}")
@@ -143,7 +142,10 @@ class Detector:
             draw_segments(general_cluster_list, last_scaled_frame_rgb, "Segments")
             draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
 
-        return Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params), edge_image
+        rectangles = Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
+        # We would like to have normalized rectangle coordinates to source image
+        normalized_rectangles = [rectangle / config.edge_detector_params.image_scaling for rectangle in rectangles]
+        return normalized_rectangles, edge_image
 
     @staticmethod
     def main(image_path, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
@@ -160,10 +162,8 @@ class Detector:
                                                                                          silent)
 
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.INTERSECT_FULL)
-        last_scaled_frame_rgb = scale_image(last_scaled_frame_rgb, config.edge_detector_params.image_scaling)
 
         rectangles = []
-        edge_images = []
 
         for contour_id, _ in enumerate(contours):
             contour_rectangles, edge_image = Detector.process_panel(
@@ -174,10 +174,9 @@ class Detector:
                 config,
                 silent)
             rectangles.extend(contour_rectangles)
-            edge_images.append(edge_image)
 
         for labeler in labelers:
-            Detector.get_rectangles_labels(rectangles, labeler, preprocessed, edge_images, labels_path)
+            Detector.get_rectangles_labels(rectangles, labeler, preprocessed, labels_path)
 
         if not silent:
             draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")

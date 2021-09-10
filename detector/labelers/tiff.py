@@ -30,11 +30,7 @@ class TiffImageLabeler(RectangleLabeler):
         return result
 
     def label_image(self):
-        try:
-            reference_image_shape = self.edge_images[0].shape
-        except IndexError:
-            return np.zeros(self.preprocessed_image.shape, np.uint8)
-        blank_image = np.zeros(reference_image_shape, np.uint8)
+        blank_image = np.zeros(self.preprocessed_image.shape, np.uint8)
         image = self.rectangle_annotated_photos(self.rectangles, blank_image)
         result = cv2.resize(image, self.preprocessed_image.shape[::-1])
         self.labeled = True

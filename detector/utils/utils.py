@@ -20,10 +20,10 @@ def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):
     opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
     for rectangle in rectangles:
         np_array = np.int32([rectangle])
-        cv2.polylines(base_image, np_array, True, opposite_color, 5, cv2.LINE_AA)
+        cv2.polylines(base_image, np_array, True, opposite_color, 1, cv2.LINE_AA)
         cv2.fillConvexPoly(mask, np_array, (255, 0, 0), cv2.LINE_4)
         x_central, y_central, width, height = calculate_centers(rectangle)
-        cv2.circle(mask, (x_central, y_central), radius=10, color=(0, 0, 0), thickness=10)
+        cv2.circle(mask, (x_central, y_central), radius=4, color=(0, 0, 0), thickness=2)
 
     cv2.addWeighted(base_image, 1, mask, 0.5, 0, base_image)
 
