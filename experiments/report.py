@@ -35,7 +35,6 @@ class Report:
     ALL_PREDICTED_RECT = 'all_predicted_rect'
     ALL_GROUND_TRUTH_RECT = 'all_ground_truth_rect'
 
-
     def __init__(self):
         self.identifier: Union[None, str] = None
         self.ground_truth_rectangles: Union[None, list] = None
@@ -99,7 +98,7 @@ class Report:
             'ground_truth_rectangles_no': sorted_df[self.GROUND_TRUTH_ID].max() + 1 if sorted_df[self.GROUND_TRUTH_ID].max() is not np.nan else 0,
             'pred_rectangles_no': sorted_df[self.PREDICTED_ID].max() + 1 if sorted_df[self.PREDICTED_ID].max() is not np.nan else 0,
             'ground_truth_rectangles': self.ground_truth_rectangles,
-            'pred_rectangles': self.prediction_rectangles,
+            'pred_rectangles': self.prediction_rectangles
         }
         return self.report
 
@@ -167,7 +166,7 @@ class ReportGenerator:
                     continue
                 report_pairs.append((ground_truth_path, prediction_path))
         self.reports_objs = (FromFileReport(*report_pair) for report_pair in report_pairs)
-        self.generated_reports = (self.generate_one_report(report_obj) for report_obj in self.reports_objs)
+        self.generated_reports = [self.generate_one_report(report_obj) for report_obj in self.reports_objs]
         return self.generated_reports
 
     def generate_one_report(self, report: FromFileReport):
@@ -183,12 +182,18 @@ class ReportGenerator:
         else:
             print(f"Utilising saved report for {report.identifier}")
             report = Report.deserialize_evaluation_result(evaluation_result_path)
-        return report.create_report()
+            return report.create_report()
 
 
 if __name__ == '__main__':
-    report_generator = ReportGenerator(glob.glob('data/thermal/*.json'), glob.glob('data/result/*.pickle'))
+    report_generator = ReportGenerator(glob.glob('../data/thermal/*.json'), glob.glob('../data/result/*.pickle'))
     generated_reports = report_generator.generate()
 
     [print(report) for report in generated_reports]
+
+    from experiments.score_calculator import ScoreCalculator
+
+    score_calculator = ScoreCalculator(generated_reports)
+    score_calculator.calculate_scores()
+
     print(f"END with {report_generator.errors} errors ")
