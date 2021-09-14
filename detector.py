@@ -5,5 +5,5 @@ from detector.logger import init_logger
 
 if __name__ == '__main__':
     init_logger()
-    Detector.main('data/thermal/TEMP_DJI_8_R (286).JPG', PlasmaConfig(), labelers=[YoloRectangleLabeler],
-                  silent=False)
+    Detector.main('experiments/data/thermal/plasma-DJI_4_R(124).JPG', PlasmaConfig(), labelers=[YoloRectangleLabeler],
+                  silent=False, labels_path="")

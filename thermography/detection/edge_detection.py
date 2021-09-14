@@ -91,8 +91,7 @@ class EdgeDetector:
         # adaptive thresholding
         adaptive_threshold = cv2.adaptiveThreshold(blurred_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                    cv2.THRESH_BINARY, 11, 2)
-        denoised_image = cv2.fastNlMeansDenoising(adaptive_threshold, 11, 31, 9)  # 30, 7, 25
-
+        denoised_image = cv2.fastNlMeansDenoising(adaptive_threshold, 9, 21, 7)  # 30, 7, 25
         # contrasting
         brightness = 0
         contrast = 64  # contrast_const

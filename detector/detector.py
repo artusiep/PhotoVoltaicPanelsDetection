@@ -11,7 +11,6 @@ from detector.utils.display import draw_rectangles, draw_intersections, draw_seg
 from detector.utils.utils import read_bgr_img, rectangle_annotated_photos
 from thermography.detection import RectangleDetector, IntersectionDetector, \
     SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, EdgeDetectorParams
-from thermography.utils import scale_image
 
 
 class Detector:
@@ -148,8 +147,8 @@ class Detector:
         return normalized_rectangles, edge_image
 
     @staticmethod
-    def main(image_path, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
-             silent: bool = True, downscale_output: bool = True):
+    def main(image_path: str, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
+             silent: bool = True):
         img = read_bgr_img(image_path)
 
         # distorted_image = img
@@ -166,14 +165,17 @@ class Detector:
         rectangles = []
 
         for contour_id, _ in enumerate(contours):
-            contour_rectangles, edge_image = Detector.process_panel(
-                contours,
-                contour_id,
-                preprocessed,
-                last_scaled_frame_rgb,
-                config,
-                silent)
-            rectangles.extend(contour_rectangles)
+            try:
+                contour_rectangles, edge_image = Detector.process_panel(
+                    contours,
+                    contour_id,
+                    preprocessed,
+                    last_scaled_frame_rgb,
+                    config,
+                    silent)
+                rectangles.extend(contour_rectangles)
+            except Exception as e:
+                logging.error(f"Failed to process panel for contour_id {contour_id}")
 
         for labeler in labelers:
             Detector.get_rectangles_labels(rectangles, labeler, preprocessed, labels_path)
@@ -182,6 +184,4 @@ class Detector:
             draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")
 
         annotated_photo = rectangle_annotated_photos(rectangles, last_scaled_frame_rgb)
-        if downscale_output:
-            annotated_photo = cv2.resize(annotated_photo, (img.shape[1], img.shape[0]))
-        return annotated_photo
+        return annotated_photo, labels_path
