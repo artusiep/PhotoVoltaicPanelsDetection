@@ -127,9 +127,10 @@ class Detector:
 
         edge_image = Detector.detect_edges_functional(roi_image, config.edge_detector_params, silent)
         segments = Detector.detect_segments_functional(edge_image, config.segment_detector_params)
-
+        # We would like to have normalized rectangle coordinates to source image
+        normalized_segments = np.rint(segments / config.edge_detector_params.image_scaling)
         general_cluster_list = Detector.cluster_segments_functional(
-            segments,
+            normalized_segments,
             params=config.segment_clusterer_params,
             cleaning_params=config.cluster_cleaning_params)
 
@@ -142,9 +143,7 @@ class Detector:
             draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
 
         rectangles = Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
-        # We would like to have normalized rectangle coordinates to source image
-        normalized_rectangles = [rectangle / config.edge_detector_params.image_scaling for rectangle in rectangles]
-        return normalized_rectangles, edge_image
+        return rectangles, edge_image
 
     @staticmethod
     def main(image_path: str, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
@@ -175,7 +174,7 @@ class Detector:
                     silent)
                 rectangles.extend(contour_rectangles)
             except Exception as e:
-                logging.error(f"Failed to process panel for contour_id {contour_id}")
+                logging.error(f"Failed to process panel for contour_id {contour_id} due to {e}")
 
         for labeler in labelers:
             Detector.get_rectangles_labels(rectangles, labeler, preprocessed, labels_path)
