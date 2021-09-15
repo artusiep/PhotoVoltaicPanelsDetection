@@ -11,7 +11,6 @@ from detector.utils.display import draw_rectangles, draw_intersections, draw_seg
 from detector.utils.utils import read_bgr_img, rectangle_annotated_photos
 from thermography.detection import RectangleDetector, IntersectionDetector, \
     SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, EdgeDetectorParams
-from thermography.utils import scale_image
 
 
 class Detector:
@@ -128,9 +127,10 @@ class Detector:
 
         edge_image = Detector.detect_edges_functional(roi_image, config.edge_detector_params, silent)
         segments = Detector.detect_segments_functional(edge_image, config.segment_detector_params)
-
+        # We would like to have normalized rectangle coordinates to source image
+        normalized_segments = np.rint(segments / config.edge_detector_params.image_scaling)
         general_cluster_list = Detector.cluster_segments_functional(
-            segments,
+            normalized_segments,
             params=config.segment_clusterer_params,
             cleaning_params=config.cluster_cleaning_params)
 
@@ -143,13 +143,11 @@ class Detector:
             draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
 
         rectangles = Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
-        # We would like to have normalized rectangle coordinates to source image
-        normalized_rectangles = [rectangle / config.edge_detector_params.image_scaling for rectangle in rectangles]
-        return normalized_rectangles, edge_image
+        return rectangles, edge_image
 
     @staticmethod
-    def main(image_path, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
-             silent: bool = True, downscale_output: bool = True):
+    def main(image_path: str, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
+             silent: bool = True):
         img = read_bgr_img(image_path)
 
         # distorted_image = img
@@ -166,14 +164,17 @@ class Detector:
         rectangles = []
 
         for contour_id, _ in enumerate(contours):
-            contour_rectangles, edge_image = Detector.process_panel(
-                contours,
-                contour_id,
-                preprocessed,
-                last_scaled_frame_rgb,
-                config,
-                silent)
-            rectangles.extend(contour_rectangles)
+            try:
+                contour_rectangles, edge_image = Detector.process_panel(
+                    contours,
+                    contour_id,
+                    preprocessed,
+                    last_scaled_frame_rgb,
+                    config,
+                    silent)
+                rectangles.extend(contour_rectangles)
+            except Exception as e:
+                logging.error(f"Failed to process panel for contour_id {contour_id} due to {e}")
 
         for labeler in labelers:
             Detector.get_rectangles_labels(rectangles, labeler, preprocessed, labels_path)
@@ -182,6 +183,4 @@ class Detector:
             draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")
 
         annotated_photo = rectangle_annotated_photos(rectangles, last_scaled_frame_rgb)
-        if downscale_output:
-            annotated_photo = cv2.resize(annotated_photo, (img.shape[1], img.shape[0]))
-        return annotated_photo
+        return annotated_photo, labels_path

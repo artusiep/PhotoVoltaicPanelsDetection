@@ -91,7 +91,8 @@ class FramePreprocessor:
             hi_thresh = 0
 
         brightest_pixels_image = cv2.threshold(grayed_image, hi_thresh, 0, cv2.THRESH_TOZERO)[1]
-        inpainted_image = cv2.inpaint(input_image, brightest_pixels_image, 21, cv2.INPAINT_TELEA)
+        inpainted_image = cv2.inpaint(input_image, brightest_pixels_image, 9, cv2.INPAINT_TELEA)
+
         return inpainted_image
 
     def remove_background(self, input_image):

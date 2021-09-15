@@ -4,6 +4,7 @@ import argparse
 import glob
 import logging
 import os
+from multiprocessing import Pool
 
 from detector.configs.abstract import Config
 from detector.detector import Detector
@@ -18,8 +19,17 @@ THERMAL = 'thermal'
 image_types = (THERMAL, RAW)
 
 
-def process(file_paths, config, output_dir, labelers, silent, downscale):
+def save_img_callback(args):
+    save_img(args[0], args[1])
+
+
+def error_callback(e):
+    logging.error(f"Annotation of img failed with: {e}")
+
+
+def process(file_paths, config, output_dir, labelers, silent):
     logging.info(f"Annotation of images started. Result will be saved to '{output_dir}'.")
+    p = Pool(max(os.cpu_count() - 2, 1))
     for index, multi_color_file_paths in enumerate(file_paths):
         if multi_color_file_paths is None:
             logging.warning("No thermal image provided. Cannot proceed with PV panels detection.")
@@ -27,18 +37,11 @@ def process(file_paths, config, output_dir, labelers, silent, downscale):
             output_path = f"{output_dir}/{os.path.basename(file_path)}"
             logging.info(f"Annotation of img '{file_path}' started. Result will be saved to '{output_path}'. "
                          f"Run index {index}.{subindex}.")
-            try:
-                annotated_img = Detector.main(os.path.abspath(file_path),
-                                              config=config,
-                                              labelers=labelers,
-                                              labels_path=output_path,
-                                              silent=silent,
-                                              downscale_output=downscale)
-            except Exception as e:
-                logging.error(f"Annotation of img {file_path} failed with: {e}")
-                continue
+            p.apply_async(Detector.main, (os.path.abspath(file_path), config, labelers, output_path, silent),
+                          callback=save_img_callback, error_callback=error_callback)
+    p.close()
+    p.join()
 
-            save_img(annotated_img, output_path)
     logging.info(f"All image annotation. Finished")
 
 
@@ -80,7 +83,6 @@ def parse_arguments():
     process_group.add_argument('-l', '--labelers', choices=RectangleLabeler.get_all_subclass(), nargs='+',
                                help=helps['labelers'], default=[])
     process_group.add_argument('-o', '--output-dir', type=dir_path, required=True, help=helps['output-dir'])
-    process_group.add_argument('--preprocessed-size', action='store_true', help=helps['preprocessed-size'])
     process_group.add_argument('--show-step-images', action='store_true', help=helps['show-step-images'])
 
     extract_group.add_argument('-cm', '--color-map', choices=available_color_maps(), default=['jet'],
@@ -104,8 +106,7 @@ def parse_arguments():
             config=Config.get_subclass_by_name(args.config),
             silent=not args.show_step_images,
             labelers=[RectangleLabeler.get_subclass_by_name(labeler) for labeler in args.labelers],
-            output_dir=args.output_dir,
-            downscale=not args.preprocessed_size)
+            output_dir=args.output_dir)
     return args
 
 

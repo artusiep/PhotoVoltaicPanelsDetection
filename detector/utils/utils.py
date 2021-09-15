@@ -30,6 +30,38 @@ def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):
     return base_image
 
 
+def iou_rectangle_annotated_photos(zip_rectangles: list, base_image: np.ndarray):
+    mean_color = np.mean(base_image, axis=(0, 1))
+    if mean_color[0] == mean_color[1] == mean_color[2]:
+        mean_color = np.array([255, 255, 0])
+    opposite_color = np.array([255, 255, 255]) - mean_color
+    opposite_color = (int(opposite_color[0]), int(opposite_color[1]), int(opposite_color[2]))
+
+    ground = np.zeros_like(base_image)
+    pred = np.zeros_like(base_image)
+    for ground_rect, pred_rect, iou in zip_rectangles:
+        ground_array = np.int32([ground_rect])
+        pred_array = np.int32([pred_rect])
+        # cv2.polylines(base_image, ground_array, True, (64, 0, 0), 1, cv2.LINE_AA)
+        cv2.fillConvexPoly(ground, ground_array, opposite_color, cv2.LINE_4)
+        # cv2.polylines(base_image, pred_array, True, (0, 64, 0), 1, cv2.LINE_AA)
+        cv2.fillConvexPoly(pred, pred_array, opposite_color, cv2.LINE_4)
+
+        x_central, y_central, width, height = calculate_centers(np.array(ground_rect))
+        if iou < 0.4:
+            color = (0, 0, 255)
+        elif iou < 0.6:
+            color = (255,0,0)
+        else:
+            color = (0, 255, 0)
+        cv2.putText(base_image, f'{iou:.2f}', (x_central-15, y_central), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color)
+
+    result = cv2.addWeighted(pred, 0.25, ground, 0.25, 0.25)
+    result = cv2.addWeighted(base_image, 1, result, -0.5, 0)
+
+    return result
+
+
 def calculate_centers(rectangle):
     xmin, ymin = rectangle.min(axis=0)
     xmax, ymax = rectangle.max(axis=0)
