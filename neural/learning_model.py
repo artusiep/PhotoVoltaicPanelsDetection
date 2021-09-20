@@ -1,10 +1,14 @@
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.metrics import f1_score
 
 from models_builders import get_model_builder
 from utils.callbacks import get_callbacks
 from utils.read_data import get_images_and_masks
 from utils.utils import get_save_model_path, load_variables
+
+import tensorflow as tf
+
 
 print("[LOG] Starting application")
 
@@ -70,6 +74,17 @@ print("[LOG] Current model accuracy: {:5.2f}%".format(100 * acc))
 
 print("[LOG] Start model predictions with test data")
 pred_test = model.predict(test_images, verbose=1)
+
+# for pred_mask in pred_test:
+#     pred_mask *= 255.0
+#     print(pred_mask.min())
+#     print(pred_mask.max())
+#     print(np.unique(pred_mask, return_counts=True))
+#     plt.title('Predicted mask')
+#     plt.imshow(tf.keras.preprocessing.image.array_to_img(pred_mask))
+#     plt.axis('off')
+#     plt.show()
+
 pred_test_t = (pred_test > 0.6).astype(np.uint8)
 print("[LOG] Did finish predictions")
 
