@@ -193,7 +193,7 @@ class ReportGenerator:
 
 
 if __name__ == '__main__':
-    report_generator = ReportGenerator(glob.glob('data/thermal/*.json'), glob.glob('data/result/*.pickle'))
+    report_generator = ReportGenerator(glob.glob('data/thermal-modules/*.json'), glob.glob('data/result/*.pickle'))
     generated_reports = report_generator.generate()
 
     for generated_report in generated_reports:
