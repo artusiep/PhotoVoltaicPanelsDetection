@@ -1,14 +1,10 @@
 import numpy as np
-from matplotlib import pyplot as plt
 from sklearn.metrics import f1_score
 
 from models_builders import get_model_builder
 from utils.callbacks import get_callbacks
 from utils.read_data import get_images_and_masks
 from utils.utils import get_save_model_path, load_variables
-
-import tensorflow as tf
-
 
 print("[LOG] Starting application")
 
@@ -54,7 +50,6 @@ results = model.fit(
     epochs=epochs,
     callbacks=get_callbacks(model_save_path))
 print("[LOG] Did finish learning")
-
 
 test_images, test_labels = get_images_and_masks(
     img_size,
