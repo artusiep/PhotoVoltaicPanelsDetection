@@ -1,7 +1,7 @@
-from datetime import datetime
 import os
+from datetime import datetime
 
-from utils.os_variable_utils import get_profile_name, get_model_name
+from utils.os_variable_utils import get_model_name
 from utils.paths_definition import get_model_save_path
 
 
@@ -12,7 +12,7 @@ def get_save_model_path(model_name):
 def load_variables():
     # profile = get_profile_name()
     model_name = get_model_name()
-    channel_numbers = 3
+    channel_numbers = 1
     img_size = int(os.environ.get('IMG_SIZE')) if os.environ.get('IMG_SIZE') else 128
     epochs = int(os.environ.get('EPOCHS')) if os.environ.get('EPOCHS') else 100
     batch_size = int(os.environ.get('BATCH_SIZE')) if os.environ.get('BATCH_SIZE') else 32

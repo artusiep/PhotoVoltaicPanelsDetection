@@ -17,7 +17,7 @@ def get_callbacks(model_save_path):
                                                      verbose=1)
 
     return [
-        tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3),
+        tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5),
         tf.keras.callbacks.TensorBoard(log_dir=get_logs_dir()),
         cp_callback
     ]
