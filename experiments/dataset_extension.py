@@ -9,11 +9,11 @@ path = 'data/raw'
 # https://en.wikipedia.org/wiki/Reservoir_sampling
 files = glob.glob("../data/raw/*.JPG")
 
-already_selected_file_names = [os.path.basename(x) for x in glob.glob('./data/raw/*.JPG')]
+already_selected_file_names = [os.path.basename(x).replace('plasma-', '') for x in glob.glob('./data/thermal-panels/*.JPG')]
 files = [x for x in files if os.path.basename(x) not in already_selected_file_names]
 
 raw_output_directory = './data/raw-2'
-thermal_output_directory = './data/thermal-panels-2'
+thermal_output_directory = './data/thermal-panels'
 
 
 def random_subset(iterator, K):
@@ -32,7 +32,7 @@ def random_subset(iterator, K):
     return result
 
 
-result_files = random_subset(files, 137)
+result_files = random_subset(files, 100)
 
 if not os.path.exists(raw_output_directory):
     os.makedirs(raw_output_directory)
