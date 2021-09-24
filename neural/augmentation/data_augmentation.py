@@ -32,8 +32,8 @@ def build_augmentation_pipeline(images):
     augmentation_pipeline.flip_random(1)
     # p.random_distortion(.3, 10, 10, 7)
     # p.random_color(1, .3, 1.2)
-    augmentation_pipeline.random_contrast(1, .1, .2)
-    augmentation_pipeline.random_brightness(1, 0.5, 1.5)
+    augmentation_pipeline.random_contrast(1, .1, .3)
+    augmentation_pipeline.random_brightness(1, 0.2, 1.2)
     augmentation_pipeline.shear(.5, 15, 15)
     # p.random_erasing(.75, 0.25)
     # p.rotate_random_90(1)
@@ -79,7 +79,12 @@ def generate_augmented_data(augmentation_pipeline):
 
             # mask
             out_mask_path = os.path.join(out_mask_dir, file_name)
-            cv2.imwrite(out_mask_path, augmented_images[j][1])
+            augmented_mask = augmented_images[j][1]
+            augmented_mask = cv2.cvtColor(augmented_mask, cv2.COLOR_BGR2GRAY)
+
+            thresh = np.mean(augmented_mask)
+            _, augmented_mask = cv2.threshold(augmented_mask, thresh, 255, cv2.THRESH_BINARY)
+            cv2.imwrite(out_mask_path, augmented_mask)
 
             print(str(i * batch + j) + " st image success")
             print(str(i) + " st batch finish")
