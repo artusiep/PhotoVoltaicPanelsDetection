@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import Augmentor
 import numpy as np
 from PIL import Image
@@ -14,11 +16,12 @@ debug = False
 count = 200  # num of images to generate
 batch = 20  # size of a single batch
 begin = 0  # indicate the current index, use only if you are continuing a crashed generation
-input_image_dir = "../data"
-input_mask_dir = "../masks"
-extension = "*.png"
-out_image_dir = "augmentation/image"
-out_mask_dir = "augmentation/mask"
+input_image_dir = '../data'
+input_mask_dir = '../masks'
+extension = '*.png'
+current_time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+out_image_dir = f'augmentation/{current_time}/image'
+out_mask_dir = f'augmentation/{current_time}/mask'
 
 
 def build_augmentation_pipeline(images):
@@ -29,7 +32,7 @@ def build_augmentation_pipeline(images):
     augmentation_pipeline.flip_random(1)
     # p.random_distortion(.3, 10, 10, 7)
     # p.random_color(1, .3, 1.2)
-    augmentation_pipeline.random_contrast(1, .5, 1.5)
+    augmentation_pipeline.random_contrast(1, .1, .2)
     augmentation_pipeline.random_brightness(1, 0.5, 1.5)
     augmentation_pipeline.shear(.5, 15, 15)
     # p.random_erasing(.75, 0.25)
