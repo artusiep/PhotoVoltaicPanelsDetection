@@ -1,0 +1,11 @@
+trainingInput:
+  scaleTier: CUSTOM
+  masterType: n1-standard-16
+  region: europe-central2
+#  masterConfig:
+#    acceleratorConfig:
+#      count: 1
+#      type: NVIDIA_TESLA_K80
+  scheduling:
+    maxWaitTime: 3600s
+    maxRunningTime: 7200s

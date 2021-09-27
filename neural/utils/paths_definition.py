@@ -20,7 +20,7 @@ OUTPUT_IMAGES_WITH_MASKS_DIR = {
 
 MODEL_SAVE_DIR = {
     'local': 'training_result/training_{}_{}/',
-    'cloud': '/home/maciek/training_results/training_{}_{}/'
+    'cloud': 'training_result/training_{}_{}/'
 }
 
 LOGS_DIR = {

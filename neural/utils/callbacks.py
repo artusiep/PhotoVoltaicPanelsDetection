@@ -1,4 +1,3 @@
-import os
 import tensorflow as tf
 
 from utils.paths_definition import get_logs_dir
@@ -6,8 +5,6 @@ from utils.paths_definition import get_logs_dir
 
 def get_callbacks(model_save_path):
     checkpoint_path = model_save_path
-
-    checkpoint_dir = os.path.dirname(checkpoint_path)
 
     # Create a callback that saves the model's weights
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
