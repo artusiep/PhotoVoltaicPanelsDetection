@@ -1,15 +1,15 @@
 import os
 
-from utils.consts import CASE_PATTERN, PNG_PATTERN
-from utils.os_variable_utils import get_profile_name
+from trainer.utils.consts import CASE_PATTERN, PNG_PATTERN
+from trainer.utils.os_variable_utils import get_profile_name
 
 INPUT_THERMAL_IMAGES_DIR = {
-    'local': os.path.join(os.path.dirname(__file__), '../data/input/'),
+    'local': os.path.join(os.path.dirname(__file__), '../../data/input/'),
     'cloud': '/home/maciek/data/case_images/'
 }
 
 INPUT_MASKS_DIR = {
-    'local': os.path.join(os.path.dirname(__file__), '../data/ground_truth/'),
+    'local': os.path.join(os.path.dirname(__file__), '../../data/ground_truth/'),
     'cloud': '/home/maciek/data/case_masks/'
 }
 
@@ -19,8 +19,8 @@ OUTPUT_IMAGES_WITH_MASKS_DIR = {
 }
 
 MODEL_SAVE_DIR = {
-    'local': 'training_result/training_{}_{}/',
-    'cloud': 'training_result/training_{}_{}/'
+    'local': 'training_result/{is_final}{run_id}_training_{model}_{timestamp}_{grayscale}{f1_score}/',
+    'cloud': 'training_result/{is_final}{run_id}_training_{model}_{timestamp}_{grayscale}{f1_score}/'
 }
 
 LOGS_DIR = {

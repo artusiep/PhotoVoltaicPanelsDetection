@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from utils.paths_definition import get_logs_dir
+from trainer.utils.paths_definition import get_logs_dir
 
 
 def get_callbacks(model_save_path):

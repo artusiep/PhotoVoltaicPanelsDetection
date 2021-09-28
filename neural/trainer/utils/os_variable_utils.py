@@ -1,6 +1,6 @@
 import os
 
-from utils.consts import UNET_6_LAYERS, UNET_DENSE_4_LAYERS
+from trainer.utils.consts import UNET_DENSE_4_LAYERS
 
 
 def get_profile_name():

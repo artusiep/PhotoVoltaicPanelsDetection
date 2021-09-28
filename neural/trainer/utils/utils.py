@@ -1,12 +1,19 @@
 import os
 from datetime import datetime
 
-from utils.os_variable_utils import get_model_name
-from utils.paths_definition import get_model_save_path
+from trainer.utils.os_variable_utils import get_model_name
+from trainer.utils.paths_definition import get_model_save_path
 
 
-def get_save_model_path(model_name):
-    return get_model_save_path().format(model_name, datetime.now().strftime("%d%m%Y_%H%M"))
+def get_save_model_path(run_id, model_name, grayscale):
+    return get_model_save_path().format(run_id=run_id, model=model_name, timestamp=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                                        f1_score='', is_final='', grayscale='gray' if grayscale else 'rgb')
+
+
+def get_final_save_model_path(run_id, model_name, f1_score, grayscale):
+    return get_model_save_path().format(run_id=run_id, model=model_name, timestamp=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                                        f1_score=f'_{round(f1_score,5)}', is_final='final_',
+                                        grayscale='gray' if grayscale else 'rgb')
 
 
 def load_variables():
@@ -24,7 +31,8 @@ def load_variables():
     # start_case_index_test = int(os.environ.get('START_CASE_INDEX_TEST')) if os.environ.get('START_CASE_INDEX_TEST') else 181
     # end_case_index_test = int(os.environ.get('END_CASE_INDEX_TEST')) if os.environ.get('END_CASE_INDEX_TEST') else 209
 
-    trained_model_weights_path = os.environ.get('TRAINED_MODEL_WEIGHTS_PATH') if os.environ.get('TRAINED_MODEL_WEIGHTS_PATH') else ''
+    trained_model_weights_path = os.environ.get('TRAINED_MODEL_WEIGHTS_PATH') if os.environ.get(
+        'TRAINED_MODEL_WEIGHTS_PATH') else ''
     # threshold = float(os.environ.get('THRESHOLD')) if os.environ.get('THRESHOLD') else 0.6
 
     print(
