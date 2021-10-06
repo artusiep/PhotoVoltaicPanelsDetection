@@ -1,6 +1,6 @@
 from models import unet_4_layers, dense_unet_4_layers, unet_6_layers, plus_plus_unet_4_layers
 
-from utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_PLUS_PLUS_4_LAYERS, UNET_DENSE_4_LAYERS
+from trainer.utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_PLUS_PLUS_4_LAYERS, UNET_DENSE_4_LAYERS
 
 
 def get_model_builder(model_name):

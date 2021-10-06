@@ -8,13 +8,13 @@ matplotlib~=3.4.1
 numpy==1.20.3
 opencv-python~=4.5.1.48
 packaging==20.9
-Pillow>=8.3.2
+Pillow==8.3.2
 pluggy==0.13.1
 py==1.10.0
 pyparsing==2.4.7
 pytest==6.2.4
 python-dateutil==2.8.1
-scikit-learn~=0.24.1
+scikit-learn=0.24.1
 scipy==1.6.3
 six==1.16.0
 threadpoolctl==2.1.0
@@ -22,7 +22,7 @@ toml==0.10.2
 typing-extensions==3.10.0.0
 zipp==3.4.1
 
-tensorflow~=2.4.1
+tensorflow~=2.5.1
 scikit-image~=0.18.1
 labelme~=4.5.10
 augmentor~=0.2.8
