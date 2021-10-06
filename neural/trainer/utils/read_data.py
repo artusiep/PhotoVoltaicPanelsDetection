@@ -66,3 +66,5 @@ def resize_and_get_image(expected_img_height, expected_img_width, img_name, shou
     if should_resize:
         img = resize(img, (expected_img_height, expected_img_width), mode='constant', preserve_range=True)
     return img
+
+

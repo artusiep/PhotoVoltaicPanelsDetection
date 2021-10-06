@@ -166,22 +166,19 @@ def display_image_in_actual_size(base_image: np.ndarray, windows_name=None, rgb=
         base_image = cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB)
     height, width, depth = base_image.shape
 
-    # What size does the figure need to be in inches to fit the image?
-    figsize = width, height
+    figsize = width / 100, height / 100
 
-    # Create a figure of the right size with one axes that takes up the full figure
     fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes([0, 0, 1, 1])
+    window = fig.add_axes([0, 0, 1, 1])
 
     # Hide spines, ticks, etc.
-    ax.axis('off')
+    window.axis('off')
     # Path(__file__, "..", "..", "..").resolve()
     # goes to root of the repository
     if windows_name is not None:
         save_img(cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB),
-                 Path(__file__, "..", "..", "..", "photos").resolve() + windows_name)
+                 str(Path(__file__, "..", "..", "..", "photos", windows_name).resolve()))
 
-    # Display the image.
-    ax.imshow(base_image)
+    window.imshow(base_image)
     plt.title(windows_name)
     plt.show()

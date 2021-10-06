@@ -5,6 +5,7 @@ from sklearn.metrics import f1_score
 from models.models_builders import get_model_builder
 from trainer.utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS
 from trainer.utils.read_data import get_images_and_masks
+from trainer.utils.visualize_model import to_file
 
 gray_models = {
     UNET_4_LAYERS: [
@@ -98,6 +99,7 @@ def start(models, grayscale, test_images, test_labels):
     result_file_name = 'results.txt'
     for model_name, weights_paths in models.items():
         model = get_model_builder(model_name)(img_size, img_size, 1 if grayscale else 3, starts_neuron)
+        to_file("test", model)
         for weights_path in weights_paths:
             try:
                 result = (predict(model, weights_path, test_images, test_labels), model_name, grayscale)
@@ -108,7 +110,8 @@ def start(models, grayscale, test_images, test_labels):
 
 
 if __name__ == '__main__':
-    _, _, test_img, test_lab = get_images_and_masks(img_size, img_size, True, grayscale=True)
+    # _, _, test_img, test_lab = get_images_and_masks(img_size, img_size, True, grayscale=True)
+    test_img, test_lab = None, None
     start(gray_models, True, test_img, test_lab)
     _, _, test_img, test_lab = get_images_and_masks(img_size, img_size, True, grayscale=False)
     start(rgb_models, False, test_img, test_lab)

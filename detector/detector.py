@@ -3,15 +3,14 @@ from typing import Tuple, Any, Type, List
 
 import numpy as np
 from cv2 import cv2
-from matplotlib import pyplot as plt
+from matplotlib import pyplot
 
 from detector.configs.abstract import Config
 from detector.labelers.abstract import RectangleLabeler
 from detector.utils.display import draw_rectangles, draw_intersections, draw_segments, display_image_in_actual_size
-from detector.utils.utils import read_bgr_img, rectangle_annotated_photos
+from detector.utils.utils import read_bgr_img, rectangle_annotated_photos, scale_image
 from thermography.detection import RectangleDetector, IntersectionDetector, \
     SegmentClusterer, SegmentDetector, EdgeDetector, FramePreprocessor, EdgeDetectorParams
-from thermography.utils import scale_image
 
 
 class Detector:
@@ -29,19 +28,19 @@ class Detector:
         last_attention_image = frame_preprocessor.attention_image
         mask = frame_preprocessor.mask
         if not silent:
-            plt.subplot(231), plt.imshow(cv2.cvtColor(last_scaled_frame_rgb, cv2.COLOR_BGR2RGB))
-            plt.title('last_scaled_frame_rgb'), plt.xticks([]), plt.yticks([])
+            pyplot.subplot(231), pyplot.imshow(cv2.cvtColor(last_scaled_frame_rgb, cv2.COLOR_BGR2RGB))
+            pyplot.title('last_scaled_frame_rgb'), pyplot.xticks([]), pyplot.yticks([])
 
-            plt.subplot(222), plt.imshow(cv2.cvtColor(last_scaled_frame, cv2.COLOR_BGR2RGB))
-            plt.title('last_scaled_fram'), plt.xticks([]), plt.yticks([])
+            pyplot.subplot(222), pyplot.imshow(cv2.cvtColor(last_scaled_frame, cv2.COLOR_BGR2RGB))
+            pyplot.title('last_scaled_fram'), pyplot.xticks([]), pyplot.yticks([])
 
-            plt.subplot(223), plt.imshow(cv2.cvtColor(last_preprocessed_image, cv2.COLOR_BGR2RGB))
-            plt.title('last_preprocessed_image'), plt.xticks([]), plt.yticks([])
+            pyplot.subplot(223), pyplot.imshow(cv2.cvtColor(last_preprocessed_image, cv2.COLOR_BGR2RGB))
+            pyplot.title('last_preprocessed_image'), pyplot.xticks([]), pyplot.yticks([])
 
-            plt.subplot(224), plt.imshow(cv2.cvtColor(last_attention_image, cv2.COLOR_BGR2RGB))
-            plt.title('last_attention_image'), plt.xticks([]), plt.yticks([])
+            pyplot.subplot(224), pyplot.imshow(cv2.cvtColor(last_attention_image, cv2.COLOR_BGR2RGB))
+            pyplot.title('last_attention_image'), pyplot.xticks([]), pyplot.yticks([])
 
-            plt.show()
+            pyplot.show(block=False)
 
         return last_preprocessed_image, last_scaled_frame_rgb, mask
 
@@ -57,11 +56,12 @@ class Detector:
         edge_image = edge_detector.edge_image
 
         if not silent:
-            plt.subplot(121), plt.imshow(frame)
-            plt.title('preprocessed'), plt.xticks([]), plt.yticks([])
-            plt.subplot(122), plt.imshow(edge_image)
-            plt.title('edge_image'), plt.xticks([]), plt.yticks([])
-            plt.show()
+            from matplotlib import pyplot
+            pyplot.subplot(121), pyplot.imshow(frame)
+            pyplot.title('preprocessed'), pyplot.xticks([]), pyplot.yticks([])
+            pyplot.subplot(122), pyplot.imshow(edge_image)
+            pyplot.title('edge_image'), pyplot.xticks([]), pyplot.yticks([])
+            pyplot.show()
         return edge_image
 
     @staticmethod
@@ -139,8 +139,9 @@ class Detector:
         if not silent:
             display_image_in_actual_size(roi_image)
             display_image_in_actual_size(edge_image)
-            draw_segments(general_cluster_list, last_scaled_frame_rgb, "Segments")
-            draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
+            rescaled_image = scale_image(last_scaled_frame_rgb, config.edge_detector_params.image_scaling)
+            draw_segments(general_cluster_list, rescaled_image, "Segments")
+            draw_intersections(intersections, rescaled_image, "Intersections")
 
         rectangles = Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
         # We would like to have normalized rectangle coordinates to source image
@@ -179,7 +180,7 @@ class Detector:
             Detector.get_rectangles_labels(rectangles, labeler, preprocessed, labels_path)
 
         if not silent:
-            draw_rectangles(rectangles, last_scaled_frame_rgb, "Rectangles")
+            draw_rectangles(rectangles, last_scaled_frame_rgb, "rectangles")
 
         annotated_photo = rectangle_annotated_photos(rectangles, last_scaled_frame_rgb)
         if downscale_output:

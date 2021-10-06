@@ -41,7 +41,4 @@
 0.8617771119502281, 'trainer/data/training_result/3_training_unet_plus_plus_4_layers_2021-09-28T14:06:28_rgb/cp.ckpt'
 0.8733680181474559, 'trainer/data/training_result/4_training_unet_plus_plus_4_layers_2021-09-28T15:58:00_rgb/cp.ckpt'
 0.8480367987432608, 'trainer/data/training_result/5_training_unet_plus_plus_4_layers_2021-09-28T16:57:17_rgb/cp.ckpt'
-
-
-
 ----

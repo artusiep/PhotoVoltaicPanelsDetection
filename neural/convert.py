@@ -64,13 +64,13 @@ def create_ground_truth_images(data_dir, out_dir, class_mapping):
     labeled_files = glob.glob(os.path.join(data_dir, '*.json'))
 
     print(f'Started converting polygons to mask images of {len(labeled_files)} files.')
-    for label_file in sorted(labeled_files):
+    for label_file_no, label_file in enumerate(sorted(labeled_files)):
         with open(label_file) as f:
             base = os.path.splitext(os.path.basename(label_file))[0]
             data = json.load(f)
             img_file = os.path.join(os.path.dirname(label_file), data['imagePath'])
             shape = data['imageHeight'], data['imageWidth'], 3
-            pil_image = PIL.Image.open(img_file)
+            source = cv2.imread(img_file, cv2.IMREAD_COLOR)
             lbl = shapes_to_label(
                 img_shape=shape,
                 shapes=data['shapes'],
@@ -82,20 +82,13 @@ def create_ground_truth_images(data_dir, out_dir, class_mapping):
 
             training_input_path = os.path.join(out_dir, 'input', base + '.png')
             ground_truth_path = os.path.join(out_dir, 'ground_truth', base + '.png')
-            pil_image.save(training_input_path)
+            cv2.imwrite(training_input_path, source)
             cv2.imwrite(ground_truth_path, ground_truth)
+            print(f"Saving to {label_file_no + 1} ground_truth image to {ground_truth_path} and "
+                  f"{label_file_no + 1} training input to {training_input_path}")
 
     print(f"Successfully created {len(labeled_files)} ground truth images ")
 
 
 create_ground_truth_images(args.data_dir, args.out_dir, {'0': 255})
-# with ZipFile(f'data/train-{DATASET_VERSION}.zip', 'w', compression=ZIP_LZMA) as train_zip:
-#     for file_path in glob.glob(f'{args.out_dir}/ground_truth/*'):
-#         file = Path(file_path).name
-#         train_zip.write(f'{args.out_dir}/ground_truth/{file}')
-#         train_zip.write(f'{args.out_dir}/input/{file}')
-#
-#
-# subprocess.Popen(['gsutil', '-m', 'cp', f'{args.out_dir}/train-{DATASET_VERSION}.zip',
-#                   f'gs://photo-voltaic-panels-detection/neural/'])
 

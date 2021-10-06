@@ -71,22 +71,15 @@ model_names = [UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS
 
 
 def train_and_evaluate_models(args):
-    # grayscale = True
-    # x_train, y_train, x_test, y_test = get_images_and_masks(args.img_size, args.img_size, True, grayscale=grayscale)
-    # for run_id in range(1, args.runs_no + 1):
-    #     for model_name in model_names:
-    #         train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args, grayscale)
-
-    grayscale = False
-    x_train, y_train, x_test, y_test = get_images_and_masks(args.img_size, args.img_size, True, grayscale=grayscale)
+    x_train, y_train, x_test, y_test = get_images_and_masks(args.img_size, args.img_size, True, args.to_grayscale)
     for run_id in range(1, args.runs_no + 1):
         for model_name in model_names:
-            train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args, grayscale)
+            train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args)
 
 
-def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args, to_grayscale):
-    model = model_builder.build(model_name, args.img_size, 1 if to_grayscale else 3, args.start_neurons)
-    model_save_path = get_save_model_path(run_id, model_name, to_grayscale)
+def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args):
+    model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
+    model_save_path = get_save_model_path(run_id, model_name, args.to_grayscale)
     callbacks = get_callbacks(model_save_path)
 
     model.fit(x=x_train,
@@ -111,7 +104,7 @@ def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, arg
     f1score = f1_score(y_test.flatten().flatten(), pred_test.flatten().flatten())
     print(f'[LOG] F1 score: {f1score}')
 
-    final_model_path = get_final_save_model_path(run_id, model_name, f1score, to_grayscale)
+    final_model_path = get_final_save_model_path(run_id, model_name, f1score, args.to_grayscale)
     model_export_f1_score_path = os.path.join(args.job_dir, final_model_path)
     tf.keras.models.save_model(model, model_export_f1_score_path)
 
