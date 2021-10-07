@@ -8,10 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Union, List
 
+import cv2
 import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
+
+from detector.utils.display import display_image_in_actual_size
+from detector.utils.utils import iou_rectangle_annotated_photos
 
 
 @dataclass
@@ -34,7 +38,6 @@ class Report:
     GROUND_TRUTH_RECT = 'ground_truth_rect'
     ALL_PREDICTED_RECT = 'all_predicted_rect'
     ALL_GROUND_TRUTH_RECT = 'all_ground_truth_rect'
-
 
     def __init__(self):
         self.identifier: Union[None, str] = None
@@ -80,7 +83,8 @@ class Report:
         return report
 
     def create_report(self) -> dict:
-        sorted_df = self.df[[self.PREDICTED_ID, self.GROUND_TRUTH_ID, self.IOU]].sort_values(self.IOU, ascending=False)
+        sorted_df = self.df[[self.PREDICTED_ID, self.GROUND_TRUTH_ID, self.IOU, self.PREDICTED_RECT,
+                             self.GROUND_TRUTH_RECT]].sort_values(self.IOU, ascending=False)
         pred_id_dedup_df = sorted_df.drop_duplicates(subset=[self.PREDICTED_ID], keep='first')
         ground_truth_id_dedup_df = sorted_df.drop_duplicates(subset=[self.GROUND_TRUTH_ID], keep='first')
 
@@ -96,8 +100,10 @@ class Report:
             'true_positive_df': found_1,
             'false_negative_df': not_found,
             'false_positive_df': badly_found,
-            'ground_truth_rectangles_no': sorted_df[self.GROUND_TRUTH_ID].max() + 1 if sorted_df[self.GROUND_TRUTH_ID].max() is not np.nan else 0,
-            'pred_rectangles_no': sorted_df[self.PREDICTED_ID].max() + 1 if sorted_df[self.PREDICTED_ID].max() is not np.nan else 0,
+            'ground_truth_rectangles_no': sorted_df[self.GROUND_TRUTH_ID].max() + 1 if sorted_df[
+                                                                                           self.GROUND_TRUTH_ID].max() is not np.nan else 0,
+            'pred_rectangles_no': sorted_df[self.PREDICTED_ID].max() + 1 if sorted_df[
+                                                                                self.PREDICTED_ID].max() is not np.nan else 0,
             'ground_truth_rectangles': self.ground_truth_rectangles,
             'pred_rectangles': self.prediction_rectangles,
         }
@@ -141,7 +147,7 @@ class FromFileReport(Report):
                 union = unary_union(polygons)
                 intersection = label_polygon.intersection(predicted_polygon)
                 IOU = intersection.area / union.area
-                values = [pred_id, ground_truth_id, IOU, predicted_rect, ground_truth_rectangle,
+                values = [pred_id, ground_truth_id, IOU, predicted_rect.tolist(), ground_truth_rectangle,
                           self.prediction_rectangles, self.ground_truth_rectangles]
                 result_collector.append(values)
 
@@ -187,8 +193,15 @@ class ReportGenerator:
 
 
 if __name__ == '__main__':
-    report_generator = ReportGenerator(glob.glob('data/thermal/*.json'), glob.glob('data/result/*.pickle'))
+    report_generator = ReportGenerator(glob.glob('data/thermal-modules/*.json'), glob.glob('data/result/*.pickle'))
     generated_reports = report_generator.generate()
 
-    [print(report) for report in generated_reports]
+    for generated_report in generated_reports:
+        path = f"data/thermal/{generated_report['identifier']}.JPG"
+        base_image = cv2.imread(path)
+        true_positive_rects = list(generated_report['true_positive_df'][['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
+        false_negative_rects = list(generated_report['false_negative_df'][['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
+        false_positive_rects = list(generated_report['false_positive_df'][['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
+        all_rects = true_positive_rects + false_positive_rects + false_negative_rects
+        display_image_in_actual_size(iou_rectangle_annotated_photos(all_rects, base_image))
     print(f"END with {report_generator.errors} errors ")

@@ -44,7 +44,7 @@ class PlasmaConfig(Config):
     cluster_cleaning_params = ClusterCleaningParams(
         max_angle_variation_mean=np.pi / 180 * 20,
         max_merging_angle=np.pi / 180 * 40,
-        max_endpoint_distance=10 * (__edge_image_scaling)
+        max_endpoint_distance=10
     )
     intersection_detector_params = IntersectionDetectorParams(
         angle_threshold=np.pi / 180 * 25
@@ -52,5 +52,5 @@ class PlasmaConfig(Config):
     rectangle_detector_params = RectangleDetectorParams(
         aspect_ratio=1.5,
         aspect_ratio_relative_deviation=0.35,
-        min_area=floor(20 * (__edge_image_scaling)) * floor(40 * (__edge_image_scaling))
+        min_area=20*40
     )
