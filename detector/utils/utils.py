@@ -50,10 +50,10 @@ def iou_rectangle_annotated_photos(zip_rectangles: list, base_image: np.ndarray)
         if iou < 0.4:
             color = (0, 0, 255)
         elif iou < 0.6:
-            color = (255,0,0)
+            color = (255, 0, 0)
         else:
             color = (0, 255, 0)
-        cv2.putText(base_image, f'{iou:.2f}', (x_central-15, y_central), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color)
+        cv2.putText(base_image, f'{iou:.2f}', (x_central - 15, y_central), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color)
 
     result = cv2.addWeighted(pred, 0.25, ground, 0.25, 0.25)
     result = cv2.addWeighted(base_image, 1, result, -0.5, 0)
@@ -81,17 +81,6 @@ def save_img(img: np.ndarray, path: str):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     result = cv2.imwrite(path, img, [cv2.IMWRITE_JPEG_QUALITY, 100])
     assert result
-
-
-def scale_image(input_image: np.ndarray, s: float):
-    """
-    Scales an input image by the value passed as parameter.
-
-    :param input_image: Image to be scaled.
-    :param s: Scalar value to be applied to the scaling procedure.
-    :return: A copy of the input image scaled by the passed parameter.
-    """
-    return cv2.resize(src=input_image, dsize=(0, 0), fx=s, fy=s)
 
 
 def auto_canny(image):

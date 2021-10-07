@@ -1,8 +1,8 @@
 from typing import Type
 
+from detector.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, SegmentClustererParams, \
+    ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
 from detector.utils.pvpd_base_class import PVPDBaseClass
-from thermography.detection import EdgeDetectorParams, PreprocessingParams, SegmentDetectorParams, \
-    SegmentClustererParams, ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
 
 
 class Config(PVPDBaseClass):

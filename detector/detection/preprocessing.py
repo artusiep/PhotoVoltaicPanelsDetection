@@ -4,14 +4,12 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from thermography.utils import scale_image, rotate_image
-
-__all__ = ["PreprocessingParams", "FramePreprocessor"]
+from detector.utils.images import scale_image, rotate_image
 
 
 @dataclass
 class PreprocessingParams:
-    """Parameters used by the :class:`.FramePreprocessor`.
+    """Parameters used by the :class:`.Preprocessor`.
     Initializes the preprocessing parameters to their default value.
 
     Attributes:
@@ -19,7 +17,8 @@ class PreprocessingParams:
         :param image_scaling: Scaling factor to apply to the input image.
         :param image_rotation: Angle expressed in radiants used to rotate the input image.
         :param red_threshold: Temperature threshold used to discard `cold` unimportant areas in the image.
-        :param min_area: Minimal surface of retained `important` areas of the image. Warm regions whose surface is smaller than this threshold are discarded.
+        :param min_area: Minimal surface of retained `important` areas of the image. Warm regions whose surface
+        is smaller than this threshold are discarded.
     """
     gaussian_blur: int = 11
     image_scaling: float = 8.0
@@ -30,7 +29,7 @@ class PreprocessingParams:
     pixel_outsider_percentage: int = 0.03
 
 
-class FramePreprocessor:
+class Preprocessor:
     """Class responsible for preprocessing an image frame."""
 
     def __init__(self, input_image: np.ndarray, params: PreprocessingParams = PreprocessingParams()):
@@ -60,7 +59,9 @@ class FramePreprocessor:
 
     @property
     def gray_scale(self) -> bool:
-        """Returns a boolean indicating wheter :attr:`self.input_image` is a greyscale image (or an RGB image where all channels are identical)."""
+        """Returns a boolean indicating whether :attr:`self.input_image` is a greyscale image
+         (or an RGB image where all channels are identical).
+         """
         if self.channels == 1:
             return True
         elif self.channels == 3:
@@ -70,7 +71,9 @@ class FramePreprocessor:
             raise ValueError("Input image has {} channels.".format(len(self.input_image.shape)))
 
     def remove_reflections(self, input_image: np.ndarray) -> np.ndarray:
-        """Returns an image with removed the most bright pixels (reflections), based on calculated image color histogram"""
+        """Returns an image with removed the most bright pixels (reflections), based on
+        calculated image color histogram
+        """
         hi_percentage = self.params.pixel_outsider_percentage
         if hi_percentage == 0.0:
             return input_image

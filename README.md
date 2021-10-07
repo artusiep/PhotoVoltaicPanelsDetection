@@ -5,14 +5,16 @@ This repository contains solution for automatic detection of solar modules.
 ## Prerequisites
 
 - Required Python > 3.7
+- For extraction exif data (thermal data) from raw images: [exiftool](https://exiftool.org/)
 
-For extraction exif data from raw image: 
+## Local installation
+Check python version
+```
+python --version
+```
+if python version is above 3.7 then:
 
--  [exiftool](https://exiftool.org/)
-
-## Installation
-Execute commands below:
-
+Install the needed python packages commands below:
 ```
 python -m venv venv
 source venv/bin/activate

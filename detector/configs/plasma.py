@@ -4,8 +4,8 @@ import numpy as np
 from cv2 import cv2
 
 from detector.configs.abstract import Config
-from thermography.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, \
-    SegmentClustererParams, ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
+from detector.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, SegmentClustererParams, \
+    ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
 
 
 class PlasmaConfig(Config):

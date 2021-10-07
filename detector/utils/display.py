@@ -1,4 +1,4 @@
-"""This module contains multiple utility functions which can be used to display intermediate representations computed by the :class:`ThermoApp <thermography.thermo_app.ThermoApp>` class."""
+"""This module contains multiple utility functions which can be used to display intermediate representations of images"""
 from math import ceil
 from pathlib import Path
 
@@ -28,8 +28,8 @@ def draw_intersections(intersections: dict, base_image: np.ndarray, windows_name
     for intersection in intersections.values():
         for elem in intersection.values():
             for x in elem.values():
-                cv2.circle(img=image, center=(int(x[0]), int(x[1])), radius=20, color=opposite_color,
-                           thickness=10, lineType=cv2.LINE_4)
+                cv2.circle(img=image, center=(int(x[0]), int(x[1])), radius=5, color=opposite_color,
+                           thickness=2, lineType=cv2.LINE_4)
 
     display_image_in_actual_size(image, windows_name)
 
@@ -156,7 +156,7 @@ def color_from_probabilities(prob: np.ndarray) -> tuple:
     :return: The color associated to the probability distribution.
     """
     color = np.diag(prob).dot(np.ones(shape=[3, 1]) * 255.0)
-    return (int(color[2]), int(color[0]), int(color[1]))
+    return int(color[2]), int(color[0]), int(color[1])
 
 
 def display_image_in_actual_size(base_image: np.ndarray, windows_name=None, rgb=False):
@@ -173,8 +173,7 @@ def display_image_in_actual_size(base_image: np.ndarray, windows_name=None, rgb=
 
     # Hide spines, ticks, etc.
     window.axis('off')
-    # Path(__file__, "..", "..", "..").resolve()
-    # goes to root of the repository
+    # Code Path(__file__, "..", "..", "..").resolve() goes to root of the repository
     if windows_name is not None:
         save_img(cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB),
                  str(Path(__file__, "..", "..", "..", "photos", windows_name).resolve()))

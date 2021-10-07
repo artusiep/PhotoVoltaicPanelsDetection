@@ -1,14 +1,11 @@
 import logging
 from dataclasses import dataclass, field
+from typing import Tuple
 
 import cv2
 import numpy as np
 
-__all__ = ["EdgeDetectorParams", "EdgeDetector"]
-
-from typing import Tuple, Type
-
-from thermography.utils import scale_image
+from detector.utils.images import scale_image
 
 
 @dataclass
@@ -46,10 +43,9 @@ class EdgeDetector:
         1. Perform a canny edge detection on the input image.
         2. Dilate the resulting binary image for a parametrized number of steps in order to connect short edges and smooth out the edge shape.
         3. Erode the dilated edge image in order to obtain a 1-pixel wide skeletonization of the edges in the input image.
-
     """
 
-    def __init__(self, input_image: np.ndarray, params: Type[EdgeDetectorParams]):
+    def __init__(self, input_image: np.ndarray, params: EdgeDetectorParams):
         """
         :param input_image: Input greyscale image where edges must be detected.
         :param params: Parameters used for edge detection.

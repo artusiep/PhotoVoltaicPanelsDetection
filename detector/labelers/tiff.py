@@ -1,16 +1,19 @@
+import logging
 import os
 
 import cv2
 import numpy as np
+
 from detector.labelers.abstract import RectangleLabeler
+
+try:
+    import tifffile as tiff
+except ModuleNotFoundError:
+    logging.warning("No module named 'tifffile'. To use TiffImageLabeler consider executing 'pip install tifffile'.")
 
 
 class TiffImageLabeler(RectangleLabeler):
     extension = 'tiff'
-
-    def __init__(self):
-        import tifffile as tiff
-        self.tiff = tiff
 
     @staticmethod
     def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):

@@ -4,8 +4,8 @@ import numpy as np
 from cv2 import cv2
 
 from detector.configs.abstract import Config
-from thermography.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, \
-    SegmentClustererParams, ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
+from detector.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, SegmentClustererParams, \
+    ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
 
 
 class JetConfig(Config):
@@ -52,5 +52,5 @@ class JetConfig(Config):
     rectangle_detector_params = RectangleDetectorParams(
         aspect_ratio=1.5,
         aspect_ratio_relative_deviation=0.35,
-        min_area=20*40
+        min_area=20 * 40
     )

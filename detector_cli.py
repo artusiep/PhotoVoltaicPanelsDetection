@@ -11,8 +11,8 @@ from detector.detector import Detector
 from detector.extractor.extractor import ThermalImageExtractor
 from detector.labelers.abstract import RectangleLabeler
 from detector.logger import init_logger
+from detector.utils.cli import extant_file, dir_path
 from detector.utils.utils import save_img, available_color_maps
-from thermography.utils.cli import dir_path, extant_file
 
 RAW = 'raw'
 THERMAL = 'thermal'

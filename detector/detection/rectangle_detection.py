@@ -2,9 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from thermography.utils.geometry import aspect_ratio, area, sort_rectangle
-
-__all__ = ["RectangleDetector", "RectangleDetectorParams"]
+from detector.utils.geometry import aspect_ratio, area, sort_rectangle
 
 
 @dataclass
@@ -90,7 +88,8 @@ class RectangleDetector:
 
         self.rectangles.extend(rectangles_between_cluster_i_j)
 
-    def get_rectangle(self, intersections_with_i, intersections_with_i_plus, segment_index_j, rectangles_between_cluster_i_j):
+    def get_rectangle(self, intersections_with_i, intersections_with_i_plus, segment_index_j,
+                      rectangles_between_cluster_i_j):
         coord1 = intersections_with_i[segment_index_j]
         coord2 = intersections_with_i[segment_index_j + 1]
         coord3 = intersections_with_i_plus[segment_index_j]

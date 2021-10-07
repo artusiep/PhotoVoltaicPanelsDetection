@@ -23,6 +23,11 @@ class ThermalImageNotFound(ThermalImageExtractorException):
         self.file_path = file_path
 
 
+class ImageNotFound(ThermalImageExtractorException):
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+
 class ThermalImageExtractor:
     @classmethod
     def get_thermal_image_file_path(cls, file_path: str, color_maps: list, output_dir: str,
@@ -31,21 +36,24 @@ class ThermalImageExtractor:
             output_dir = f'{tempfile.gettempdir()}/pvpd'
         try:
             return cls._extract_thermal_image(file_path, color_maps, output_dir, display_photos)[1]
+        except ImageNotFound as e:
+            logging.error(f"No image found under the path: {e.file_path}.")
         except ThermalImageNotFound as e:
-            logging.warning(f"No thermal data found in {e.file_path}. Omitting")
+            exiftool_report = subprocess.check_output([exiftool_path, e.file_path]).decode('utf-8')
+            logging.error(f"No thermal data found in {e.file_path}. Exiftool report: \n{exiftool_report}")
 
     @staticmethod
     def _extract_thermal_image(file_path: str, color_maps: list,
                                output_dir: str = f'{tempfile.gettempdir()}/pvpd',
                                display_photos: bool = False):
-        thermal_img_bytes = subprocess.check_output([exiftool_path, "-RawThermalImage", "-b", file_path])
+        if not os.path.isfile(file_path):
+            raise ImageNotFound(file_path)
+        thermal_img_bytes = subprocess.check_output([exiftool_path, "-RawThermalImage", "-b", file_path],
+                                                    stderr=subprocess.DEVNULL)
         if len(thermal_img_bytes) == 0:
             raise ThermalImageNotFound(file_path)
         img_np_arr = np.frombuffer(thermal_img_bytes, np.uint16)
         img_encode = cv2.imdecode(img_np_arr, cv2.IMREAD_UNCHANGED)
-
-        if display_photos:
-            display_image_in_actual_size(img_encode)
 
         thermal_normalized = (img_encode - np.amin(img_encode)) / (np.amax(img_encode) - np.amin(img_encode))
 
@@ -61,6 +69,8 @@ class ThermalImageExtractor:
                                                                       filename=filename,
                                                                       image_thermal=ready_to_save_img)
             file_paths.append(thermal_image_path)
+            if display_photos:
+                display_image_in_actual_size(ready_to_save_img)
             images.append(ready_to_save_img)
         return images, file_paths
 
@@ -87,5 +97,5 @@ class ThermalImageExtractor:
 
 if __name__ == '__main__':
     init_logger()
-    ThermalImageExtractor.extract_thermal_image(file_path='../../data/raw/DJI_1_R (23).JPG',
-                                                color_maps=['jet'])
+    ThermalImageExtractor.get_thermal_image_file_path(file_path='../../data/raw/DJI_1_R (23).JPG',
+                                                      color_maps=['jet', 'plasma'], output_dir='.', display_photos=True)

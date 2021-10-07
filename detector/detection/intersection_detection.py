@@ -1,11 +1,9 @@
+import logging
 from dataclasses import dataclass
 
 import numpy as np
-# from simple_logger import Logger
 
-from thermography.utils.geometry import angle, angle_diff, segment_segment_intersection
-
-__all__ = ["IntersectionDetector", "IntersectionDetectorParams"]
+from detector.utils.geometry import angle, angle_diff, segment_segment_intersection
 
 
 @dataclass
@@ -46,14 +44,14 @@ class IntersectionDetector:
 
         .. note:: The intersections are only computed between segments belonging to different clusters, and never between segments of the same cluster.
         """
-        # Logger.debug("Detecting intersection")
+        logging.debug("Detecting intersection")
         self.cluster_cluster_intersections = {}
         self.raw_intersections = []
         num_clusters = len(self.segments)
         for cluster_index_i in range(num_clusters):
             for cluster_index_j in range(cluster_index_i + 1, num_clusters):
-                # Logger.debug("Detecting intersections between cluster {} and cluster {}".format(cluster_index_i,
-                #                                                                                 cluster_index_j))
+                logging.debug("Detecting intersections between cluster {} and cluster {}".format(cluster_index_i,
+                                                                                                 cluster_index_j))
                 self.__detect_intersections_between_clusters(cluster_index_i, cluster_index_j)
 
     def __detect_intersections_between_clusters(self, cluster_index_i: int, cluster_index_j: int) -> None:
