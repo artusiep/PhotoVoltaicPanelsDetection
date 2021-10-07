@@ -3,11 +3,14 @@ import os
 import cv2
 import numpy as np
 from detector.labelers.abstract import RectangleLabeler
-import tifffile as tiff
 
 
 class TiffImageLabeler(RectangleLabeler):
     extension = 'tiff'
+
+    def __init__(self):
+        import tifffile as tiff
+        self.tiff = tiff
 
     @staticmethod
     def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):
@@ -41,5 +44,5 @@ class TiffImageLabeler(RectangleLabeler):
         file_name = f'{root}.{self.extension}'
         if not self.labeled:
             threshold_image = self.label_image()
-            tiff.imsave(file_name, threshold_image)
+            self.tiff.imsave(file_name, threshold_image)
         return file_name

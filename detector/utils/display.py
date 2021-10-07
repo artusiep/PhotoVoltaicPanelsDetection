@@ -1,5 +1,6 @@
 """This module contains multiple utility functions which can be used to display intermediate representations computed by the :class:`ThermoApp <thermography.thermo_app.ThermoApp>` class."""
 from math import ceil
+from pathlib import Path
 
 import cv2
 import matplotlib.pyplot as plt
@@ -28,7 +29,7 @@ def draw_intersections(intersections: dict, base_image: np.ndarray, windows_name
         for elem in intersection.values():
             for x in elem.values():
                 cv2.circle(img=image, center=(int(x[0]), int(x[1])), radius=20, color=opposite_color,
-                   thickness=10, lineType=cv2.LINE_4)
+                           thickness=10, lineType=cv2.LINE_4)
 
     display_image_in_actual_size(image, windows_name)
 
@@ -158,30 +159,26 @@ def color_from_probabilities(prob: np.ndarray) -> tuple:
     return (int(color[2]), int(color[0]), int(color[1]))
 
 
-def display_image_in_actual_size(base_image: np.ndarray, windows_name='default', rgb=False):
+def display_image_in_actual_size(base_image: np.ndarray, windows_name=None, rgb=False):
     if rgb:
         base_image = cv2.cvtColor(base_image, cv2.COLOR_RGBA2RGB)
     else:
         base_image = cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB)
-    if base_image.shape[0] < 900 and base_image.shape[1] < 900:
-        dpi = 80
-    else:
-        dpi = 80 * 4
     height, width, depth = base_image.shape
 
-    # What size does the figure need to be in inches to fit the image?
-    figsize = width / float(dpi), height / float(dpi)
+    figsize = width / 100, height / 100
 
-    # Create a figure of the right size with one axes that takes up the full figure
     fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes([0, 0, 1, 1])
+    window = fig.add_axes([0, 0, 1, 1])
 
     # Hide spines, ticks, etc.
-    ax.axis('off')
-    save_img(cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB),
-             '/Users/artursiepietwoski/Developer/Private/PhotoVoltaicPanelsDetection/photos/' + windows_name)
+    window.axis('off')
+    # Path(__file__, "..", "..", "..").resolve()
+    # goes to root of the repository
+    if windows_name is not None:
+        save_img(cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB),
+                 str(Path(__file__, "..", "..", "..", "photos", windows_name).resolve()))
 
-    # Display the image.
-    ax.imshow(base_image)
+    window.imshow(base_image)
     plt.title(windows_name)
     plt.show()

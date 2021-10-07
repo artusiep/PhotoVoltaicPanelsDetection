@@ -2,7 +2,6 @@ import json
 import os
 
 import numpy as np
-from simple_logger import Logger
 
 
 class Camera:
@@ -19,7 +18,6 @@ class Camera:
         with open(self.camera_path) as param_file:
             self.camera_params = json.load(param_file)
 
-        Logger.debug("Camera parameter file is: \n{}".format(str(self)))
 
     def __str__(self):
         return "Image size: {},\n" \
@@ -89,9 +87,7 @@ class Camera:
     @camera_path.setter
     def camera_path(self, path: str):
         if not os.path.exists(path):
-            Logger.fatal("Camera config file {} not found".format(self.camera_path))
             raise FileNotFoundError("Camera config file {} not found".format(self.camera_path))
         if not path.endswith("json"):
-            Logger.fatal("Can only parse '.json' files")
             raise ValueError("Can only parse '.json' files, passed camera file is {}".format(path))
         self.__camera_path = path

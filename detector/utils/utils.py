@@ -1,5 +1,4 @@
-import logging
-import os
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -72,22 +71,27 @@ def calculate_centers(rectangle):
     return x_central, y_central, width, height
 
 
-def read_bgr_img(path):
+def read_bgr_img(path: str):
     return cv2.imread(path)
 
 
-def save_img(img, path):
+def save_img(img: np.ndarray, path: str):
     if not path.lower().endswith(('.jpg', '.jpeg')):
         path = path + '.jpg'
-    catalogues = "/".join(path.split('/')[:-1])
-    try:
-        os.makedirs(catalogues)
-    except FileExistsError:
-        pass
-    except Exception as e:
-        logging.error(f"Failed to create path to save image {e}")
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     result = cv2.imwrite(path, img, [cv2.IMWRITE_JPEG_QUALITY, 100])
     assert result
+
+
+def scale_image(input_image: np.ndarray, s: float):
+    """
+    Scales an input image by the value passed as parameter.
+
+    :param input_image: Image to be scaled.
+    :param s: Scalar value to be applied to the scaling procedure.
+    :return: A copy of the input image scaled by the passed parameter.
+    """
+    return cv2.resize(src=input_image, dsize=(0, 0), fx=s, fy=s)
 
 
 def auto_canny(image):
