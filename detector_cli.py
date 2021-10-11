@@ -19,16 +19,36 @@ THERMAL = 'thermal'
 image_types = (THERMAL, RAW)
 
 
+def process(multithread, **args):
+    if multithread:
+        process_multiple(**args)
+    else:
+        process_single(**args)
+
+
+def process_single(file_paths, config, output_dir, labelers, silent):
+    logging.info(f"Annotation of images started. Result will be saved to '{output_dir}'.")
+    for index, multi_color_file_paths in enumerate(file_paths):
+        if multi_color_file_paths is None:
+            logging.warning("No thermal image provided. Cannot proceed with PV panels detection.")
+        for subindex, file_path in enumerate(multi_color_file_paths):
+            output_path = f"{output_dir}/{os.path.basename(file_path)}"
+            logging.info(f"Annotation of img '{file_path}' started. Result will be saved to '{output_path}'. "
+                         f"Run index {index}.{subindex}.")
+            Detector.main(os.path.abspath(file_path), config, labelers, output_path, silent)
+
+
 def save_img_callback(args):
-    save_img(args[0], args[1])
+    pass
+    # save_img(args[0], args[1])
 
 
 def error_callback(e):
     logging.error(f"Annotation of img failed with: {e}")
 
 
-def process(file_paths, config, output_dir, labelers, silent):
-    logging.info(f"Annotation of images started. Result will be saved to '{output_dir}'.")
+def process_multiple(file_paths, config, output_dir, labelers, silent):
+    logging.info(f"Multithreading annotation of images started. Result will be saved to '{output_dir}'.")
     p = Pool(max(os.cpu_count() - 2, 1))
     for index, multi_color_file_paths in enumerate(file_paths):
         if multi_color_file_paths is None:
@@ -46,6 +66,7 @@ def process(file_paths, config, output_dir, labelers, silent):
 
 
 helps = {
+    'multithread': "Multithreaded version of detection. Speed up detection using all available processor resources",
     'config': "Config Class name. Based on config PV panels are detected from image. "
               "User can create his own config and place in detector/configs directory. "
               "Class name must be unique",
@@ -70,7 +91,7 @@ helps = {
 def parse_arguments():
     init_logger()
     parser = argparse.ArgumentParser(prog='PhotoVoltaic Panels Detector', description='')
-
+    parser.add_argument('-m', '--multithread', action='store_true', help=helps['multithread'])
     parser.add_argument('-t', '--type', choices=image_types, default=THERMAL, help=helps['type'])
     extract_group = parser.add_argument_group('extract')
     process_group = parser.add_argument_group('process')
@@ -99,14 +120,22 @@ def parse_arguments():
     files = iter(files)
 
     if args.type == RAW:
-        thermal_files = (ThermalImageExtractor.get_thermal_image_file_path(file, args.color_map, args.thermal_image_output) for file in files)
+        thermal_files = (
+            ThermalImageExtractor.get_thermal_image_file_path(
+                file,
+                args.color_map,
+                args.thermal_image_output
+            ) for file in files)
         files = thermal_files
 
-    process(file_paths=files,
-            config=Config.get_subclass_by_name(args.config),
-            silent=not args.show_step_images,
-            labelers=[RectangleLabeler.get_subclass_by_name(labeler) for labeler in args.labelers],
-            output_dir=args.output_dir)
+    process(
+        multithread=args.multithread,
+        file_paths=files,
+        config=Config.get_subclass_by_name(args.config),
+        silent=not args.show_step_images,
+        labelers=[RectangleLabeler.get_subclass_by_name(labeler) for labeler in args.labelers],
+        output_dir=args.output_dir
+    )
     return args
 
 

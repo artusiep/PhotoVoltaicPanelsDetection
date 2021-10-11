@@ -3,7 +3,7 @@ import os
 import random
 from shutil import copyfile
 
-from extractor.extractor import ThermalImageExtractor
+from detector.extractor.extractor import ThermalImageExtractor
 
 path = 'data/raw'
 # https://en.wikipedia.org/wiki/Reservoir_sampling

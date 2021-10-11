@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Tuple, Any, Type, List
 
 import numpy as np
@@ -81,7 +82,8 @@ class Detector:
         return segment_detector.segments
 
     @staticmethod
-    def cluster_segments_functional(segments, params: SegmentClustererParams, cleaning_params: ClusterCleaningParams) -> Any:
+    def cluster_segments_functional(segments, params: SegmentClustererParams,
+                                    cleaning_params: ClusterCleaningParams) -> Any:
         """Clusters the segments in :param:`segments` according to the parameters in :param:`param`.
         After that aggregate and clean cluster using :param:`cleaning_params`
         See Also:
@@ -122,9 +124,17 @@ class Detector:
 
     @staticmethod
     def get_rectangles_labels(rectangles: List[np.ndarray], rectangle_labeler: Type[RectangleLabeler],
-                              preprocessed_image: np.ndarray, label_path: str) -> Any:
+                              thermal_image: np.ndarray, image_path: str,
+                              preprocessed_image: np.ndarray, label_path: str, tags: dict) -> Any:
         """Create label files using labeler based on detected rectangles."""
-        labeler = rectangle_labeler(rectangles=rectangles, preprocessed_image=preprocessed_image, label_path=label_path)
+        labeler = rectangle_labeler(
+            rectangles=rectangles,
+            thermal_image=thermal_image,
+            image_path=image_path,
+            preprocessed_image=preprocessed_image,
+            label_path=label_path,
+            tags=tags
+        )
         if label_path:
             label_file = labeler.create_label_file()
             logging.info(f"Created label file: {label_file}")
@@ -162,14 +172,15 @@ class Detector:
     @staticmethod
     def main(image_path: str, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
              silent: bool = True):
-        img = read_bgr_img(image_path)
+        start_time = datetime.now()
+        thermal_image = read_bgr_img(image_path)
 
         # distorted_image = img
         # if False:
         #     undistorted_image = cv2.undistort(src=distorted_image)
         # else:
         #     undistorted_image = distorted_image
-        preprocessed_image, scaled_image_rgb, mask = Detector.preprocess_image_functional(img,
+        preprocessed_image, scaled_image_rgb, mask = Detector.preprocess_image_functional(thermal_image,
                                                                                           config.preprocessing_params,
                                                                                           silent)
 
@@ -190,8 +201,24 @@ class Detector:
             except Exception as e:
                 logging.error(f"Failed to process panel for contour_id {contour_id} due to {e}")
 
+        end_time = datetime.now()
+
+
+        tags = {
+            'start_time': start_time,
+            'end_time': end_time,
+            'detection_duration': end_time - start_time
+        }
         for labeler in labelers:
-            Detector.get_rectangles_labels(rectangles, labeler, preprocessed_image, labels_path)
+            Detector.get_rectangles_labels(
+                rectangles,
+                labeler,
+                thermal_image,
+                image_path,
+                preprocessed_image,
+                labels_path,
+                tags
+            )
 
         if not silent:
             draw_rectangles(rectangles, scaled_image_rgb, "rectangles")

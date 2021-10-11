@@ -33,7 +33,6 @@ class YoloRectangleLabeler(RectangleLabeler):
         return self.labels_collector
 
     def create_label_file(self):
-
         if not self.labeled:
             self.label_image()
         root, ext = os.path.splitext(self.label_path)

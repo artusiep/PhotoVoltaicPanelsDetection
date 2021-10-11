@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pathlib import Path
 
 import cv2
@@ -91,9 +92,19 @@ def auto_canny(image):
     return lower, upper
 
 
+def to_camel(string):
+    return ''.join((wd.title() if i else wd) for (i, wd) in enumerate(string.split('_')))
+
+
+@lru_cache()
+def color_maps():
+    return {color_map_name: value for color_map_name, value in cm.__dict__.items() if
+            getattr(value, '__module__', "") == 'matplotlib.colors'}
+
+
 def available_color_maps():
-    return cm._cmap_registry.keys()
+    return color_maps().keys()
 
 
 def get_color_map_by_name(name):
-    return cm._cmap_registry[name]
+    return color_maps()[name]
