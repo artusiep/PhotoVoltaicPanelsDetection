@@ -127,6 +127,8 @@ def parse_arguments():
                 args.thermal_image_output
             ) for file in files)
         files = thermal_files
+    else:
+        files = (files,)
 
     process(
         multithread=args.multithread,

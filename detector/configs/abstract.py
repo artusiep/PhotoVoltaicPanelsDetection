@@ -1,10 +1,13 @@
+from typing import Union
+
 from detector.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, SegmentClustererParams, \
     ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
+from detector.detection.preprocessing_ml import PreprocessingMlParams
 from detector.utils.pvpd_base_class import PVPDBaseClass
 
 
 class Config(PVPDBaseClass):
-    preprocessing_params: PreprocessingParams = None
+    preprocessing_params: Union[PreprocessingParams, PreprocessingMlParams] = None
     edge_detector_params: EdgeDetectorParams = None
     segment_detector_params: SegmentDetectorParams = None
     segment_clusterer_params: SegmentClustererParams = None

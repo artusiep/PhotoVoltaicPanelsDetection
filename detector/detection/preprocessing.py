@@ -44,7 +44,6 @@ class Preprocessor:
         self.scaled_image_rgb = None
         self.scaled_image = None
         self.attention_image = None
-        self.centroids = None
         self.mask = None
 
     @property
