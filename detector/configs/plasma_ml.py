@@ -34,7 +34,7 @@ class PlasmaMlConfig(Config):
     segment_detector_params = SegmentDetectorParams(
         d_rho=1,
         d_theta=np.pi / 180,
-        min_num_votes=110,
+        min_num_votes=100,
         min_line_length=max(floor(10 * (__edge_image_scaling - 2)), 20),
         max_line_gap=20 * __edge_image_scaling,
         extension_pixels=35 * __edge_image_scaling
@@ -50,7 +50,7 @@ class PlasmaMlConfig(Config):
     cluster_cleaning_params = ClusterCleaningParams(
         max_angle_variation_mean=np.pi / 180 * 20,
         max_merging_angle=np.pi / 180 * 40,
-        max_endpoint_distance=15
+        max_endpoint_distance=10
     )
     intersection_detector_params = IntersectionDetectorParams(
         angle_threshold=np.pi / 180 * 25
