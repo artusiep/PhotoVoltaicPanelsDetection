@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 import numpy as np
 from skimage.color import rgb2gray
@@ -11,6 +12,7 @@ images_dir = get_images_dir()
 panels_masks_dir = get_panels_masks_dir()
 
 
+@lru_cache(maxsize=12)
 def get_images_and_masks(expected_img_width, expected_img_height, should_resize, grayscale):
     img_names = os.listdir(images_dir)
     number_of_images = len(img_names)
@@ -26,6 +28,7 @@ def get_images_and_masks(expected_img_width, expected_img_height, should_resize,
 
     i = 0
     for img_index, img_name in enumerate(img_names):
+        print("")
         if i % 5 == 0:
             if grayscale:
                 x_test[img_index] = image_to_gray(expected_img_height, expected_img_width, img_name, should_resize)
