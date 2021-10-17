@@ -9,10 +9,11 @@ from matplotlib import pyplot
 from detector.configs.abstract import Config
 from detector.detection import Preprocessor, PreprocessingParams, EdgeDetectorParams, SegmentDetector, \
     SegmentDetectorParams, EdgeDetector, SegmentClusterer, ClusterCleaningParams, SegmentClustererParams, \
-    IntersectionDetector, IntersectionDetectorParams, RectangleDetector, RectangleDetectorParams, scale_image
+    IntersectionDetector, IntersectionDetectorParams, RectangleDetector, RectangleDetectorParams
 from detector.detection.preprocessing_ml import PreprocessorMl, PreprocessingMlParams
 from detector.labelers.abstract import RectangleLabeler
-from detector.utils.display import draw_rectangles, draw_intersections, draw_segments, display_image_in_actual_size
+from detector.utils.display import draw_rectangles, draw_intersections, draw_segments, display_image_in_actual_size, \
+    draw_segments_raw
 from detector.utils.utils import read_bgr_img, rectangle_annotated_photos
 
 
@@ -190,8 +191,9 @@ class Detector:
 
         edge_image = Detector.detect_edges_functional(roi_image, config.edge_detector_params, silent)
         segments = Detector.detect_segments_functional(edge_image, config.segment_detector_params)
+
         # We would like to have normalized rectangle coordinates accordingly to source image
-        normalized_segments = segments
+        normalized_segments = np.rint(segments / config.edge_detector_params.image_scaling)
         general_cluster_list = Detector.cluster_segments_functional(
             normalized_segments,
             params=config.segment_clusterer_params,
@@ -202,8 +204,9 @@ class Detector:
         if not silent:
             display_image_in_actual_size(roi_image)
             display_image_in_actual_size(edge_image)
-            draw_segments(general_cluster_list, scale_image(last_scaled_frame_rgb, 3), "Segments")
-            draw_intersections(intersections,  scale_image(last_scaled_frame_rgb, 3), "Intersections")
+            draw_segments_raw((segments/config.edge_detector_params.image_scaling).astype(int), last_scaled_frame_rgb, 'Segments Raw')
+            draw_segments(general_cluster_list, last_scaled_frame_rgb, "Segments")
+            draw_intersections(intersections, last_scaled_frame_rgb, "Intersections")
 
         rectangles = Detector.detect_rectangles_functional(intersections, params=config.rectangle_detector_params)
         return rectangles, edge_image
@@ -264,7 +267,7 @@ class Detector:
             )
 
         if not silent:
-            draw_rectangles(rectangles,  scale_image(scaled_image_rgb,3), "rectangles")
+            draw_rectangles(rectangles, scaled_image_rgb, "rectangles")
 
         annotated_photo = rectangle_annotated_photos(rectangles, scaled_image_rgb)
         return annotated_photo, labels_path

@@ -13,7 +13,7 @@ from trainer import model_builder
 from trainer.utils.callbacks import get_callbacks
 from trainer.utils.read_data import get_images_and_masks
 from trainer.utils.utils import get_save_model_path, get_final_save_model_path
-from utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS
+from utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152
 
 
 def get_args():
@@ -65,7 +65,7 @@ def get_args():
         default='INFO')
     parser.add_argument(
         '--models',
-        choices=[UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS],
+        choices=[UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152],
         nargs='+',
         required=True
     )

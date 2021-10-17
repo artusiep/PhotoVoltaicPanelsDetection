@@ -35,12 +35,12 @@ def process_single(file_paths, config, output_dir, labelers, silent):
             output_path = f"{output_dir}/{os.path.basename(file_path)}"
             logging.info(f"Annotation of img '{file_path}' started. Result will be saved to '{output_path}'. "
                          f"Run index {index}.{subindex}.")
-            Detector.main(os.path.abspath(file_path), config, labelers, output_path, silent)
+            annotated, path = Detector.main(os.path.abspath(file_path), config, labelers, output_path, silent)
+            save_img(annotated, path)
 
 
 def save_img_callback(args):
-    pass
-    # save_img(args[0], args[1])
+    save_img(args[0], args[1])
 
 
 def error_callback(e):

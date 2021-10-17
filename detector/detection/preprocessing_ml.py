@@ -26,9 +26,11 @@ class PreprocessingMlParams:
     """
     model_name: str
     weight_path: str
+    min_area: int
     gray: bool = True
     model_image_size: Tuple[int, int] = (128, 128)
     start_neurons: int = 16
+    model_output_threshold: int = 64
     gaussian_blur: int = 11
 
     @property
@@ -93,39 +95,12 @@ class PreprocessorMl:
         # Maybe consider other interpolation
         result_image = (result_image.reshape(*self.params.model_image_size) * 255).astype('uint8')
         result_scaled_image = cv2.resize(result_image, dsize=self.input_image.shape[1::-1])
-        ret, threshold_image = cv2.threshold(result_scaled_image, 32, 255, cv2.THRESH_BINARY)
+        ret, threshold_image = cv2.threshold(result_scaled_image, self.params.model_output_threshold, 255,
+                                             cv2.THRESH_BINARY)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         mask = cv2.morphologyEx(threshold_image, cv2.MORPH_OPEN, kernel, iterations=2)
         self.mask = mask
         return self.mask
-
-    def remove_reflections_2(self, input_image: np.ndarray) -> np.ndarray:
-        """Returns an image with removed the most bright pixels (reflections), based on
-        calculated image color histogram
-        """
-        hi_percentage = 0.02
-        if hi_percentage == 0.0:
-            return input_image
-        grayed_image = input_image
-
-        # we want the hi_percentage brightest pixels
-        hist = cv2.calcHist([grayed_image], [0], None, [256], [0, 256]).flatten()
-
-        total_count = grayed_image.shape[0] * grayed_image.shape[1]  # height * width
-        target_count = hi_percentage * total_count  # bright pixels look for
-        summed = 0
-        for i in range(255, 0, -1):
-            summed += int(hist[i])
-            if target_count <= summed:
-                hi_thresh = i
-                break
-        else:
-            hi_thresh = 0
-
-        brightest_pixels_image = cv2.threshold(grayed_image, hi_thresh, 0, cv2.THRESH_TOZERO)[1]
-        images_without_brightest_pixels = cv2.subtract(input_image, brightest_pixels_image)
-
-        return images_without_brightest_pixels
 
     def remove_reflections(self, input_image: np.ndarray) -> np.ndarray:
         """Returns an image with removed the most bright pixels (reflections), based on
@@ -151,7 +126,7 @@ class PreprocessorMl:
             hi_thresh = 0
 
         brightest_pixels_image = cv2.threshold(grayed_image, hi_thresh, 0, cv2.THRESH_TOZERO)[1]
-        inpainted_image = cv2.inpaint(input_image, brightest_pixels_image, 9, cv2.INPAINT_TELEA)
+        inpainted_image = cv2.inpaint(input_image, brightest_pixels_image, 21, cv2.INPAINT_TELEA)
 
         return inpainted_image
 
@@ -166,10 +141,16 @@ class PreprocessorMl:
                 b. Otherwise the entire image is kept as attention.
 
         """
-        display_image_in_actual_size(self.input_image)
         removed_reflections_img = self.remove_reflections(self.input_image)
-        display_image_in_actual_size(removed_reflections_img)
-        self.scaled_image = cv2.cvtColor(removed_reflections_img, cv2.COLOR_BGR2GRAY)
+        blurred_removed_reflections_img = cv2.blur(removed_reflections_img,
+                                                   (self.params.gaussian_blur, self.params.gaussian_blur))
+        display_image_in_actual_size(blurred_removed_reflections_img)
+        self.scaled_image = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
+        thresholded_image = cv2.adaptiveThreshold(self.scaled_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                  cv2.THRESH_BINARY, 713, 1)
+        # Perform dilation and erosion on the thresholded image to remove holes and small islands.
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+        opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel, iterations=2)
 
         image = self.prepare_image()
         display_image_in_actual_size(image[0])
@@ -179,22 +160,27 @@ class PreprocessorMl:
 
         result_scaled_mask = self.to_original_size(result_image)
 
-        display_image_in_actual_size(result_scaled_mask)
+        x = cv2.bitwise_or(result_scaled_mask, opening)
+        # background_removed_image = cv2.bitwise_and(self.scaled_image, x)
 
-        attention_mask = cv2.applyColorMap(result_scaled_mask, cv2.COLORMAP_WINTER)
+        contours, hierarchy = cv2.findContours(x, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours = [contour for contour in contours if cv2.contourArea(contour) > (120 ** 2)]
+
+        mask = np.zeros_like(self.scaled_image)
+        cv2.drawContours(mask, contours, -1, (255), cv2.FILLED)
+        merged_mask = (mask).astype(np.uint8)
+        self.mask = merged_mask
+        background_removed_image = cv2.bitwise_and(self.scaled_image, merged_mask)
+        blurred_mask = cv2.blur(merged_mask, (40, 40))
+        blurred_mask = blurred_mask.astype(np.float) / 255.
+
+        self.preprocessed_image = (blurred_mask * background_removed_image).astype(np.uint8)
+
+
+        mask = (mask * 255).astype(np.uint8)
+        attention_mask = cv2.applyColorMap(mask, cv2.COLORMAP_WINTER)
         self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR), 0.7, attention_mask,
                                                0.3, 0)
-
-        thresholded_image = cv2.adaptiveThreshold(self.scaled_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                  cv2.THRESH_BINARY, 713, 1)
-
-        # Perform dilation and erosion on the thresholded image to remove holes and small islands.
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        opening = cv2.morphologyEx(cv2.bitwise_and(thresholded_image, result_scaled_mask), cv2.MORPH_OPEN, kernel, iterations=2)
-
-        blurred = cv2.blur(self.scaled_image, (self.params.gaussian_blur, self.params.gaussian_blur))
-
-        self.preprocessed_image = self.remove_reflections_2(blurred * opening)
 
 
 if __name__ == '__main__':
