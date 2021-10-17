@@ -1,6 +1,5 @@
 import os
 
-from trainer.utils.consts import CASE_PATTERN, PNG_PATTERN
 from trainer.utils.os_variable_utils import get_profile_name
 
 INPUT_THERMAL_IMAGES_DIR = {
@@ -52,13 +51,3 @@ def get_images_dir():
 
 def get_logs_dir():
     return LOGS_DIR[get_profile_name()]
-
-
-def get_prediction_results_case_dir(model_name, threshold, img_size, case_index):
-    return PREDICTION_RESULTS_WITH_MASKS[get_profile_name()].format(model_name, threshold,
-                                                                    img_size) + CASE_PATTERN.format(case_index)
-
-
-def get_prediction_results_image_path(model_name, threshold, img_size, case_index, img_index):
-    return get_prediction_results_case_dir(model_name, threshold, img_size, case_index) + '/' + PNG_PATTERN.format(
-        img_index)

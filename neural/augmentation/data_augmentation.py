@@ -3,7 +3,6 @@ from datetime import datetime
 
 import Augmentor
 import numpy as np
-from PIL import Image
 import glob
 from natsort import natsorted
 import os
@@ -12,9 +11,10 @@ import matplotlib.pyplot as plt
 import cv2
 from pathlib import Path
 
+from detector.utils.utils import read_bgr_img
 
 debug = False
-count = 200  # num of images to generate
+count = 2000  # num of images to generate
 batch = 20  # size of a single batch
 begin = 0  # indicate the current index, use only if you are continuing a crashed generation
 input_image_dir = '../data/input'
@@ -37,15 +37,15 @@ def build_augmentation_pipeline(images):
     augmentation_pipeline.zoom(1, 1.1, 1.3)
     # p.zoom_random(1, .9)
     augmentation_pipeline.skew(1, .8)
-    augmentation_pipeline.flip_random(1)
+    augmentation_pipeline.flip_random(0.75)
     # p.random_distortion(.3, 10, 10, 7)
     # p.random_color(1, .3, 1.2)
-    augmentation_pipeline.random_contrast(1, .1, .3)
-    augmentation_pipeline.random_brightness(1, 0.2, 1.2)
-    augmentation_pipeline.shear(.5, 15, 15)
+    # augmentation_pipeline.random_contrast(1, .1, .3)
+    augmentation_pipeline.random_brightness(.75, 0.6, 1.2)
+    augmentation_pipeline.shear(.5, 10, 10)
     # p.random_erasing(.75, 0.25)
     # p.rotate_random_90(1)
-    # p.rotate(1, max_left_rotation=15, max_right_rotation=15)
+    augmentation_pipeline.rotate(.5, max_left_rotation=15, max_right_rotation=15)
     return augmentation_pipeline
 
 
@@ -57,7 +57,7 @@ def read_images_and_ground_truth():
     ground_truth_images = natsorted(glob.glob(ground_truth_path))
     print(input_ground_truth_dir + ":" + str(len(ground_truth_images)))
 
-    return [[np.asarray(Image.open(y)) for y in x] for x in list(zip(images, ground_truth_images))]
+    return [[read_bgr_img(y) for y in x] for x in list(zip(images, ground_truth_images))]
 
 
 def generate_augmented_data(augmentation_pipeline):
