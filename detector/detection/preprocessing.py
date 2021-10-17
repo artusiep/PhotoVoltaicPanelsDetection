@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+from detector.utils.display import display_image_in_actual_size
 from detector.utils.images import scale_image, rotate_image
 
 
@@ -44,7 +45,6 @@ class Preprocessor:
         self.scaled_image_rgb = None
         self.scaled_image = None
         self.attention_image = None
-        self.centroids = None
         self.mask = None
 
     @property
@@ -94,7 +94,7 @@ class Preprocessor:
             hi_thresh = 0
 
         brightest_pixels_image = cv2.threshold(grayed_image, hi_thresh, 0, cv2.THRESH_TOZERO)[1]
-        inpainted_image = cv2.inpaint(input_image, brightest_pixels_image, 9, cv2.INPAINT_TELEA)
+        inpainted_image = cv2.inpaint(input_image, brightest_pixels_image, 21, cv2.INPAINT_TELEA)
 
         return inpainted_image
 
@@ -144,30 +144,36 @@ class Preprocessor:
                 b. Otherwise the entire image is kept as attention.
 
         """
-        removed_reflections_img = self.remove_reflections(self.input_image)
-        scaled_image = scale_image(removed_reflections_img, self.params.image_scaling)
-        rotated_frame = rotate_image(scaled_image, self.params.image_rotation)
+
+        scaled_image = scale_image(self.input_image, self.params.image_scaling)
+        rotated_image = rotate_image(scaled_image, self.params.image_rotation)
 
         if self.params.gaussian_blur > 0:
-            rotated_frame = cv2.blur(rotated_frame, (self.params.gaussian_blur, self.params.gaussian_blur))
+            rotated_image = cv2.blur(rotated_image, (self.params.gaussian_blur, self.params.gaussian_blur))
+
+        removed_reflections_img = self.remove_reflections(rotated_image)
 
         if self.channels == 1:
-            self.scaled_image = rotated_frame
+            self.scaled_image = scaled_image
             self.scaled_image_rgb = cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR)
-            self.preprocessed_image = self.scaled_image.astype(np.uint8)
+            self.preprocessed_image = removed_reflections_img
             mask = np.ones_like(self.scaled_image).astype(np.uint8) * 255
         else:
             if self.gray_scale:
-                self.scaled_image_rgb = rotated_frame
-                self.scaled_image = rotated_frame[:, :, 0]
-                self.preprocessed_image = self.scaled_image.astype(np.uint8)
+                self.scaled_image = scaled_image[:, :, 0]
+                self.scaled_image_rgb = None
+                self.preprocessed_image = removed_reflections_img
                 mask = np.ones_like(self.scaled_image).astype(np.uint8) * 255
             else:
-                self.scaled_image_rgb = rotated_frame
+                self.scaled_image_rgb = scaled_image
                 self.scaled_image = cv2.cvtColor(self.scaled_image_rgb, cv2.COLOR_BGR2GRAY)
 
-                thresholded_image = cv2.adaptiveThreshold(self.scaled_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                removed_reflections_img_gray = cv2.cvtColor(removed_reflections_img, cv2.COLOR_BGR2GRAY)
+
+                thresholded_image = cv2.adaptiveThreshold(removed_reflections_img_gray, 255,
+                                                          cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                           cv2.THRESH_BINARY, 713, 1)
+                display_image_in_actual_size(thresholded_image)
                 # Perform dilation and erosion on the thresholded image to remove holes and small islands.
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
 
