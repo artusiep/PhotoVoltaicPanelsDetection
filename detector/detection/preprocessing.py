@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from detector.utils.display import display_image_in_actual_size
 from detector.utils.images import scale_image, rotate_image
 
 
@@ -98,41 +97,6 @@ class Preprocessor:
 
         return inpainted_image
 
-    def remove_background(self, input_image):
-        gaussian_blur = 3
-        # blurred_image = cv2.blur(input_image, (gaussian_blur, gaussian_blur))
-        # blurred_image = cv2.GaussianBlur(scaled_image, (3,3), 0)
-        blurred_image = cv2.bilateralFilter(input_image, 5, 120, 120)
-
-        grayed_image = cv2.cvtColor(blurred_image, cv2.COLOR_BGR2GRAY)
-        thresholded_image = cv2.adaptiveThreshold(grayed_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                  cv2.THRESH_BINARY, 713, 1)
-
-        # noise removal
-        kernel = np.ones((7, 7), np.uint8)
-        opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel, iterations=2)
-
-        # find sure foreground area
-        distance_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 3)
-        _, sure_foreground_image = cv2.threshold(distance_transform, 0.01 * distance_transform.max(), 255, 0)
-        sure_foreground_image = np.uint8(sure_foreground_image)
-
-        background_removed_image = cv2.bitwise_and(grayed_image, sure_foreground_image)
-
-        # discard small contours/areas
-
-        contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if
-                    cv2.contourArea(contour) > (self.params.min_area / self.params.image_scaling)]
-        mask = np.zeros_like(background_removed_image)
-        cv2.drawContours(mask, contours, -1, 255, cv2.FILLED)
-
-        mask = cv2.dilate(mask, kernel, iterations=5)
-        mask = cv2.blur(mask, (25, 25))
-        mask = mask.astype(np.float) / 255.
-        retained_contours_image = (background_removed_image * mask).astype(np.uint8)
-        return retained_contours_image
-
     def preprocess(self) -> None:
         """Preprocesses the :attr:`self.input_image` following this steps:
 
@@ -173,7 +137,6 @@ class Preprocessor:
                 thresholded_image = cv2.adaptiveThreshold(removed_reflections_img_gray, 255,
                                                           cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                           cv2.THRESH_BINARY, 713, 1)
-                display_image_in_actual_size(thresholded_image)
                 # Perform dilation and erosion on the thresholded image to remove holes and small islands.
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
 

@@ -83,7 +83,7 @@ class PreprocessorMl:
         model.load_weights(params.weight_path)
         return model
 
-    def prepare_image(self):
+    def ml_prepare_image(self):
         if self.params.gray:
             image = cv2.cv2.cvtColor(self.input_image, cv2.COLOR_BGR2GRAY)
         else:
@@ -91,7 +91,7 @@ class PreprocessorMl:
         image = cv2.resize(image, dsize=self.params.model_image_size)
         return image.reshape((1, *self.params.model_image_size))
 
-    def to_original_size(self, result_image):
+    def ml_to_original_size(self, result_image):
         # Maybe consider other interpolation
         result_image = (result_image.reshape(*self.params.model_image_size) * 255).astype('uint8')
         result_scaled_image = cv2.resize(result_image, dsize=self.input_image.shape[1::-1])
@@ -130,6 +130,18 @@ class PreprocessorMl:
 
         return inpainted_image
 
+    def classic_image_processing_mask(self, step_1_img):
+        thresholded_image = cv2.adaptiveThreshold(step_1_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                  cv2.THRESH_BINARY, 713, 1)
+        # Perform dilation and erosion on the thresholded image to remove holes and small islands.
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+        return cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel, iterations=2)
+
+    def ml_image_processing_mask(self):
+        image = self.ml_prepare_image()
+        result_image = self.model.predict(image, use_multiprocessing=True)
+        return self.ml_to_original_size(result_image)
+
     def preprocess(self) -> None:
         """Preprocesses the :attr:`self.input_image` following this steps:
 
@@ -144,41 +156,29 @@ class PreprocessorMl:
         removed_reflections_img = self.remove_reflections(self.input_image)
         blurred_removed_reflections_img = cv2.blur(removed_reflections_img,
                                                    (self.params.gaussian_blur, self.params.gaussian_blur))
-        display_image_in_actual_size(blurred_removed_reflections_img)
-        self.scaled_image = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
-        thresholded_image = cv2.adaptiveThreshold(self.scaled_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                  cv2.THRESH_BINARY, 713, 1)
-        # Perform dilation and erosion on the thresholded image to remove holes and small islands.
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-        opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel, iterations=2)
+        step_1_img = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
+        self.scaled_image = step_1_img
 
-        image = self.prepare_image()
-        display_image_in_actual_size(image[0])
-        result_image = self.model.predict(image, use_multiprocessing=True)
+        classic_mask = self.classic_image_processing_mask(step_1_img)
+        ml_mask = self.ml_image_processing_mask()
 
-        display_image_in_actual_size(result_image[0])
+        merged_masks = cv2.bitwise_or(classic_mask, ml_mask)
 
-        result_scaled_mask = self.to_original_size(result_image)
-
-        x = cv2.bitwise_or(result_scaled_mask, opening)
-        # background_removed_image = cv2.bitwise_and(self.scaled_image, x)
-
-        contours, hierarchy = cv2.findContours(x, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(merged_masks, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         contours = [contour for contour in contours if cv2.contourArea(contour) > (120 ** 2)]
+        corrected_merged_mask = np.zeros_like(step_1_img)
+        cv2.drawContours(corrected_merged_mask, contours, -1, (255), cv2.FILLED)
+        corrected_merged_mask = corrected_merged_mask.astype(np.uint8)
 
-        mask = np.zeros_like(self.scaled_image)
-        cv2.drawContours(mask, contours, -1, (255), cv2.FILLED)
-        merged_mask = (mask).astype(np.uint8)
-        self.mask = merged_mask
-        background_removed_image = cv2.bitwise_and(self.scaled_image, merged_mask)
-        blurred_mask = cv2.blur(merged_mask, (40, 40))
+        self.mask = corrected_merged_mask
+        background_removed_image = cv2.bitwise_and(step_1_img, corrected_merged_mask)
+
+        blurred_mask = cv2.blur(corrected_merged_mask, (40, 40))
         blurred_mask = blurred_mask.astype(np.float) / 255.
-
         self.preprocessed_image = (blurred_mask * background_removed_image).astype(np.uint8)
 
 
-        mask = (mask * 255).astype(np.uint8)
-        attention_mask = cv2.applyColorMap(mask, cv2.COLORMAP_WINTER)
+        attention_mask = cv2.applyColorMap(corrected_merged_mask, cv2.COLORMAP_WINTER)
         self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR), 0.7, attention_mask,
                                                0.3, 0)
 
