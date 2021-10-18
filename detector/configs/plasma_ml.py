@@ -27,8 +27,8 @@ class PlasmaMlConfig(Config):
         image_scaling=__edge_image_scaling,
         hysteresis_min_thresh=35,
         hysteresis_max_thresh=45,
-        kernel_size=(3, 3),
-        kernel_shape=cv2.MORPH_RECT,
+        kernel_size=(7, 7),
+        kernel_shape=cv2.MORPH_CROSS,
         dilation_steps=4
     )
     segment_detector_params = SegmentDetectorParams(

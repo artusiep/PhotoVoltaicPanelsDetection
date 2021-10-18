@@ -17,7 +17,7 @@ class PlasmaMl4Unet256Config(Config):
         model_name=UNET_4_LAYERS,
         weight_path='detector/configs/models/1_training_unet_4_layers_2021-10-17T23:28:47_gray/cp.ckpt',
         gray=True,
-        model_image_size=(256, 256),
+        model_image_size=(512, 512),
         start_neurons=16,
         gaussian_blur=3,
         model_output_threshold=64,
@@ -27,14 +27,14 @@ class PlasmaMl4Unet256Config(Config):
         image_scaling=__edge_image_scaling,
         hysteresis_min_thresh=35,
         hysteresis_max_thresh=45,
-        kernel_size=(3, 3),
-        kernel_shape=cv2.MORPH_RECT,
+        kernel_size=(7, 7),
+        kernel_shape=cv2.MORPH_CROSS,
         dilation_steps=4
     )
     segment_detector_params = SegmentDetectorParams(
         d_rho=1,
         d_theta=np.pi / 180,
-        min_num_votes=110,
+        min_num_votes=75,
         min_line_length=max(floor(10 * (__edge_image_scaling - 2)), 20),
         max_line_gap=20 * __edge_image_scaling,
         extension_pixels=35 * __edge_image_scaling
@@ -49,8 +49,8 @@ class PlasmaMl4Unet256Config(Config):
     )
     cluster_cleaning_params = ClusterCleaningParams(
         max_angle_variation_mean=np.pi / 180 * 20,
-        max_merging_angle=np.pi / 180 * 40,
-        max_endpoint_distance=15
+        max_merging_angle=np.pi / 180 * 30,
+        max_endpoint_distance=10
     )
     intersection_detector_params = IntersectionDetectorParams(
         angle_threshold=np.pi / 180 * 25
@@ -58,5 +58,5 @@ class PlasmaMl4Unet256Config(Config):
     rectangle_detector_params = RectangleDetectorParams(
         aspect_ratio=1.5,
         aspect_ratio_relative_deviation=0.35,
-        min_area=20 * 40
+        min_area=20 * 30
     )

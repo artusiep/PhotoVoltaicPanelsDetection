@@ -69,7 +69,7 @@ class PreprocessorMl:
         self.params = params
         self.preprocessed_image = None
         self.scaled_image_rgb = input_image
-        self.scaled_image = None
+        self.scaled_image_gray = None
         self.attention_image = None
         self.centroids = None
         self.mask = None
@@ -157,7 +157,7 @@ class PreprocessorMl:
         blurred_removed_reflections_img = cv2.blur(removed_reflections_img,
                                                    (self.params.gaussian_blur, self.params.gaussian_blur))
         step_1_img = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
-        self.scaled_image = step_1_img
+        self.scaled_image_gray = step_1_img
 
         classic_mask = self.classic_image_processing_mask(step_1_img)
         ml_mask = self.ml_image_processing_mask()
@@ -179,7 +179,7 @@ class PreprocessorMl:
         self.preprocessed_image = (blurred_mask * background_removed_image).astype(np.uint8)
 
         attention_mask = cv2.applyColorMap(corrected_merged_mask, cv2.COLORMAP_WINTER)
-        self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR), 0.7, attention_mask,
+        self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image_gray, cv2.COLOR_GRAY2BGR), 0.7, attention_mask,
                                                0.3, 0)
 
 

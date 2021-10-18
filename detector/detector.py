@@ -32,16 +32,16 @@ class Detector:
         preprocessor = Preprocessor(input_image=image, params=params)
         preprocessor.preprocess()
         scaled_image_rgb = preprocessor.scaled_image_rgb
-        scaled_image = preprocessor.scaled_image
+        scaled_image = preprocessor.scaled_image_gray
         preprocessed_image = preprocessor.preprocessed_image
         attention_image = preprocessor.attention_image
         mask = preprocessor.mask
         if not silent:
-            pyplot.subplot(231), pyplot.imshow(cv2.cvtColor(scaled_image_rgb, cv2.COLOR_BGR2RGB))
+            pyplot.subplot(221), pyplot.imshow(cv2.cvtColor(scaled_image_rgb, cv2.COLOR_BGR2RGB))
             pyplot.title('scaled_image_rgb'), pyplot.xticks([]), pyplot.yticks([])
 
             pyplot.subplot(222), pyplot.imshow(cv2.cvtColor(scaled_image, cv2.COLOR_BGR2RGB))
-            pyplot.title('scaled_image'), pyplot.xticks([]), pyplot.yticks([])
+            pyplot.title('scaled_image_gray'), pyplot.xticks([]), pyplot.yticks([])
 
             pyplot.subplot(223), pyplot.imshow(cv2.cvtColor(preprocessed_image, cv2.COLOR_BGR2RGB))
             pyplot.title('preprocessed_image'), pyplot.xticks([]), pyplot.yticks([])
@@ -67,7 +67,7 @@ class Detector:
         preprocessor = PreprocessorMl(input_image=image, params=params)
         preprocessor.preprocess()
         scaled_image_rgb = preprocessor.scaled_image_rgb
-        scaled_image = preprocessor.scaled_image
+        scaled_image = preprocessor.scaled_image_gray
         preprocessed_image = preprocessor.preprocessed_image
         attention_image = preprocessor.attention_image
         mask = preprocessor.mask

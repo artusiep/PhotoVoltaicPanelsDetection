@@ -11,7 +11,6 @@ from detector.utils.images import scale_image, rotate_image
 class PreprocessingParams:
     """Parameters used by the :class:`.Preprocessor`.
     Initializes the preprocessing parameters to their default value.
-
     Attributes:
         :param gaussian_blur: Radius of the gaussian blur to apply to the input image.
         :param image_scaling: Scaling factor to apply to the input image.
@@ -34,7 +33,6 @@ class Preprocessor:
 
     def __init__(self, input_image: np.ndarray, params: PreprocessingParams = PreprocessingParams()):
         """Initializes the frame preprocessor with the input image and the preprocessor parameters.
-
         :param input_image: RGB or greyscale input image to be preprocessed.
         :param params: Preprocessing parameters.
         """
@@ -42,8 +40,9 @@ class Preprocessor:
         self.params = params
         self.preprocessed_image = None
         self.scaled_image_rgb = None
-        self.scaled_image = None
+        self.scaled_image_gray = None
         self.attention_image = None
+        self.centroids = None
         self.mask = None
 
     @property
@@ -99,43 +98,35 @@ class Preprocessor:
 
     def preprocess(self) -> None:
         """Preprocesses the :attr:`self.input_image` following this steps:
-
             1. The image is scaled using the :attr:`self.params.image_scaling` parameter.
             2. The image is rotated using the :attr:`self.params.image_rotation` parameter.
             3. Attention detection.
-
                 a. If the image is RGB, the :attr:`self.params.red_threshold` parameter is used to determine the attention areas of the image.
                 b. Otherwise the entire image is kept as attention.
-
         """
-
-        scaled_image = scale_image(self.input_image, self.params.image_scaling)
-        rotated_image = rotate_image(scaled_image, self.params.image_rotation)
+        removed_reflections_img = self.remove_reflections(self.input_image)
+        scaled_image = scale_image(removed_reflections_img, self.params.image_scaling)
+        rotated_frame = rotate_image(scaled_image, self.params.image_rotation)
 
         if self.params.gaussian_blur > 0:
-            rotated_image = cv2.blur(rotated_image, (self.params.gaussian_blur, self.params.gaussian_blur))
-
-        removed_reflections_img = self.remove_reflections(rotated_image)
+            rotated_frame = cv2.blur(rotated_frame, (self.params.gaussian_blur, self.params.gaussian_blur))
 
         if self.channels == 1:
-            self.scaled_image = scaled_image
-            self.scaled_image_rgb = cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR)
-            self.preprocessed_image = removed_reflections_img
-            mask = np.ones_like(self.scaled_image).astype(np.uint8) * 255
+            self.scaled_image_gray = rotated_frame
+            self.scaled_image_rgb = cv2.cvtColor(self.scaled_image_gray, cv2.COLOR_GRAY2BGR)
+            self.preprocessed_image = self.scaled_image_gray.astype(np.uint8)
+            mask = np.ones_like(self.scaled_image_gray).astype(np.uint8) * 255
         else:
             if self.gray_scale:
-                self.scaled_image = scaled_image[:, :, 0]
-                self.scaled_image_rgb = None
-                self.preprocessed_image = removed_reflections_img
-                mask = np.ones_like(self.scaled_image).astype(np.uint8) * 255
+                self.scaled_image_rgb = rotated_frame
+                self.scaled_image_gray = rotated_frame[:, :, 0]
+                self.preprocessed_image = self.scaled_image_gray.astype(np.uint8)
+                mask = np.ones_like(self.scaled_image_gray).astype(np.uint8) * 255
             else:
-                self.scaled_image_rgb = scaled_image
-                self.scaled_image = cv2.cvtColor(self.scaled_image_rgb, cv2.COLOR_BGR2GRAY)
+                self.scaled_image_rgb = rotated_frame
+                self.scaled_image_gray = cv2.cvtColor(self.scaled_image_rgb, cv2.COLOR_BGR2GRAY)
 
-                removed_reflections_img_gray = cv2.cvtColor(removed_reflections_img, cv2.COLOR_BGR2GRAY)
-
-                thresholded_image = cv2.adaptiveThreshold(removed_reflections_img_gray, 255,
-                                                          cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                thresholded_image = cv2.adaptiveThreshold(self.scaled_image_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                           cv2.THRESH_BINARY, 713, 1)
                 # Perform dilation and erosion on the thresholded image to remove holes and small islands.
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
@@ -144,7 +135,7 @@ class Preprocessor:
                 distance_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 3)
                 _, sure_foreground_image = cv2.threshold(distance_transform, 0.01 * distance_transform.max(), 255, 0)
                 sure_foreground_image = np.uint8(sure_foreground_image)
-                background_removed_image = cv2.bitwise_and(self.scaled_image, sure_foreground_image)
+                background_removed_image = cv2.bitwise_and(self.scaled_image_gray, sure_foreground_image)
 
                 closing = cv2.morphologyEx(background_removed_image, cv2.MORPH_CLOSE, kernel)
                 opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
@@ -157,7 +148,7 @@ class Preprocessor:
                 contours = hulls
                 result_contours = []
                 for contour in contours:
-                    mask = np.zeros_like(self.scaled_image)
+                    mask = np.zeros_like(self.scaled_image_gray)
                     cv2.drawContours(mask, [contour], 0, (255), cv2.FILLED)
                     mask = mask.astype(np.float) / 255.
                     result = self.scaled_image_rgb[:, :, 2] * mask
@@ -168,7 +159,7 @@ class Preprocessor:
                 if len(contours) > len(result_contours):
                     logging.info("Reduced number of contours")
 
-                mask = np.zeros_like(self.scaled_image)
+                mask = np.zeros_like(self.scaled_image_gray)
                 cv2.drawContours(mask, result_contours, -1, (255), cv2.FILLED)
                 mask = cv2.dilate(mask, kernel, iterations=4)
                 self.mask = mask
@@ -177,7 +168,9 @@ class Preprocessor:
                 self.preprocessed_image = (background_removed_image * mask).astype(np.uint8)
                 mask = (mask * 255).astype(np.uint8)
 
+        self.scaled_image_rgb = scale_image(self.input_image, self.params.image_scaling)
+        self.scaled_image_gray = cv2.cvtColor(self.scaled_image_rgb, cv2.COLOR_BGR2GRAY)
         attention_mask = cv2.applyColorMap(mask, cv2.COLORMAP_WINTER)
         self.attention_image = np.empty_like(self.scaled_image_rgb)
-        cv2.addWeighted(cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR), 0.7, attention_mask, 0.3, 0,
+        cv2.addWeighted(cv2.cvtColor(self.scaled_image_gray, cv2.COLOR_GRAY2BGR), 0.7, attention_mask, 0.3, 0,
                         self.attention_image)
