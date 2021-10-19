@@ -85,7 +85,7 @@ class PreprocessorMl:
 
     def ml_prepare_image(self):
         if self.params.gray:
-            image = cv2.cv2.cvtColor(self.input_image, cv2.COLOR_BGR2GRAY)
+            image = cv2.cvtColor(self.input_image, cv2.COLOR_BGR2GRAY)
         else:
             image = self.input_image
         image = cv2.resize(image, dsize=self.params.model_image_size)
@@ -153,34 +153,54 @@ class PreprocessorMl:
                 b. Otherwise the entire image is kept as attention.
 
         """
+        step_1_img = cv2.cvtColor(self.input_image, cv2.COLOR_BGR2GRAY)
+
         removed_reflections_img = self.remove_reflections(self.input_image)
         blurred_removed_reflections_img = cv2.blur(removed_reflections_img,
                                                    (self.params.gaussian_blur, self.params.gaussian_blur))
+
+        # blurred_removed_reflections_img = self.apply_brightness_contrast(removed_reflections_img, 0, 64)
+
         step_1_img = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
+
+        # cv2.equalizeHist(self.scaled_image_gray)
+        # step_1_img = cv2.equalizeHist(step_1_img)
         self.scaled_image_gray = step_1_img
 
-        classic_mask = self.classic_image_processing_mask(step_1_img)
         ml_mask = self.ml_image_processing_mask()
 
-        merged_masks = cv2.bitwise_or(classic_mask, ml_mask)
+        self.mask = ml_mask
+        background_removed_image = cv2.bitwise_and(step_1_img, ml_mask)
 
-        contours, hierarchy = cv2.findContours(merged_masks, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if cv2.contourArea(contour) > (120 ** 2)]
-        corrected_merged_mask = np.zeros_like(step_1_img)
-        cv2.drawContours(corrected_merged_mask, contours, -1, (255), cv2.FILLED)
-        corrected_merged_mask = corrected_merged_mask.astype(np.uint8)
+        self.preprocessed_image = (self.mask * background_removed_image).astype(np.uint8)
 
-        self.mask = corrected_merged_mask
-        background_removed_image = cv2.bitwise_and(step_1_img, corrected_merged_mask)
-
-        blurred_mask = cv2.blur(corrected_merged_mask, (40, 40))
-        blurred_mask = blurred_mask.astype(np.float) / 255.
-
-        self.preprocessed_image = (blurred_mask * background_removed_image).astype(np.uint8)
-
-        attention_mask = cv2.applyColorMap(corrected_merged_mask, cv2.COLORMAP_WINTER)
+        attention_mask = cv2.applyColorMap(self.mask, cv2.COLORMAP_WINTER)
         self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image_gray, cv2.COLOR_GRAY2BGR), 0.7, attention_mask,
                                                0.3, 0)
+
+    @staticmethod
+    def apply_brightness_contrast(input_img, brightness=0, contrast=0):
+        if brightness != 0:
+            if brightness > 0:
+                shadow = brightness
+                highlight = 255
+            else:
+                shadow = 0
+                highlight = 255 + brightness
+            alpha_b = (highlight - shadow) / 255
+            gamma_b = shadow
+
+            buf = cv2.addWeighted(input_img, alpha_b, input_img, 0, gamma_b)
+        else:
+            buf = input_img.copy()
+
+        if contrast != 0:
+            f = 131 * (contrast + 127) / (127 * (131 - contrast))
+            alpha_c = f
+            gamma_c = 127 * (1 - f)
+
+            buf = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
+        return buf
 
 
 if __name__ == '__main__':

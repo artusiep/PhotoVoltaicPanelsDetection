@@ -15,9 +15,9 @@ class PlasmaMl4Unet256Config(Config):
     __edge_image_scaling = 3
     preprocessing_params = PreprocessingMlParams(
         model_name=UNET_4_LAYERS,
-        weight_path='detector/configs/models/1_training_unet_4_layers_2021-10-17T23:28:47_gray/cp.ckpt',
+        weight_path='/Users/andrzej.maj/Desktop/Magisterka/PhotoVoltaicPanelsDetection/detector/configs/models/content/training_result/1_training_unet_4_layers_2021-10-17T23:28:47_gray/cp.ckpt',
         gray=True,
-        model_image_size=(512, 512),
+        model_image_size=(384, 384),
         start_neurons=16,
         gaussian_blur=3,
         model_output_threshold=64,
