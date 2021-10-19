@@ -4,9 +4,13 @@ from typing import Tuple
 
 import cv2
 import numpy as np
+from matplotlib import pyplot as plt
+from skimage import morphology
 
 from detector.utils.images import scale_image
 
+
+from detector.utils.display import display_image_in_actual_size
 
 @dataclass
 class EdgeDetectorParams:
@@ -102,6 +106,8 @@ class EdgeDetector:
         strengthen_edges_img = self.strengthen_edges(self.input_image)
         _, global_thresh = cv2.threshold(self.input_image, 0, 255, cv2.THRESH_BINARY)
         strengthened_edges_image = cv2.bitwise_and(strengthen_edges_img, global_thresh)
+
+        strengthened_edges_image = cv2.fastNlMeansDenoising(strengthened_edges_image, 30, 40, 10)
 
         scaled_strengthened_edges_image = scale_image(strengthened_edges_image, self.params.image_scaling)
 

@@ -3,6 +3,11 @@ from dataclasses import dataclass
 
 import cv2
 import numpy as np
+import skimage
+from scipy import ndimage
+from skimage import img_as_ubyte
+from skimage.exposure import rescale_intensity
+from skimage.filters import threshold_yen
 
 from detector.utils.images import scale_image, rotate_image
 
@@ -26,8 +31,10 @@ class PreprocessingParams:
     red_threshold: int = 120
     min_red_contour: int = 120
     min_area: int = 250 * 250
-    pixel_outsider_percentage: int = 0.03
+    pixel_outsider_percentage: int = 0.10
 
+
+from detector.utils.display import display_image_in_actual_size
 
 class Preprocessor:
     """Class responsible for preprocessing an image frame."""
@@ -76,7 +83,8 @@ class Preprocessor:
         hi_percentage = self.params.pixel_outsider_percentage
         if hi_percentage == 0.0:
             return input_image
-        grayed_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+        # grayed_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+        grayed_image = input_image
 
         # we want the hi_percentage brightest pixels
         hist = cv2.calcHist([grayed_image], [0], None, [256], [0, 256]).flatten()
@@ -112,36 +120,42 @@ class Preprocessor:
         scaled_image = scale_image(self.input_image, self.params.image_scaling)
         rotated_image = rotate_image(scaled_image, self.params.image_rotation)
 
+        yen_threshold = threshold_yen(rotated_image)
+        bright = rescale_intensity(rotated_image, (0, yen_threshold), (0, 255))
+        bright = bright[:, :, ::-1]  # convert image from RGB (skimage) to BGR (opencv)
+        cv2.imshow('bright', bright)
+        # cv2.waitKey()
+
         if self.params.gaussian_blur > 0:
             rotated_image = cv2.blur(rotated_image, (self.params.gaussian_blur, self.params.gaussian_blur))
 
-        removed_reflections_img = self.remove_reflections(rotated_image)
+        # removed_reflections_img = self.remove_reflections(rotated_image)
 
         if self.channels == 1:
             self.scaled_image = scaled_image
             self.scaled_image_rgb = cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR)
-            self.preprocessed_image = removed_reflections_img
+            self.preprocessed_image = rotated_image
             mask = np.ones_like(self.scaled_image).astype(np.uint8) * 255
         else:
             if self.gray_scale:
                 self.scaled_image = scaled_image[:, :, 0]
                 self.scaled_image_rgb = None
-                self.preprocessed_image = removed_reflections_img
+                self.preprocessed_image = rotated_image
                 mask = np.ones_like(self.scaled_image).astype(np.uint8) * 255
             else:
                 self.scaled_image_rgb = scaled_image
                 self.scaled_image = cv2.cvtColor(self.scaled_image_rgb, cv2.COLOR_BGR2GRAY)
 
-                removed_reflections_img_gray = cv2.cvtColor(removed_reflections_img, cv2.COLOR_BGR2GRAY)
+                rotated_image = cv2.cvtColor(rotated_image, cv2.COLOR_BGR2GRAY)
 
-                thresholded_image = cv2.adaptiveThreshold(removed_reflections_img_gray, 255,
+                thresholded_image = cv2.adaptiveThreshold(rotated_image, 255,
                                                           cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                           cv2.THRESH_BINARY, 713, 1)
                 # Perform dilation and erosion on the thresholded image to remove holes and small islands.
-                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
                 opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel, iterations=2)
-                distance_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 3)
+                distance_transform = cv2.distanceTransform(opening, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
                 _, sure_foreground_image = cv2.threshold(distance_transform, 0.01 * distance_transform.max(), 255, 0)
                 sure_foreground_image = np.uint8(sure_foreground_image)
                 background_removed_image = cv2.bitwise_and(self.scaled_image, sure_foreground_image)
@@ -176,6 +190,24 @@ class Preprocessor:
                 mask = mask.astype(np.float) / 255.
                 self.preprocessed_image = (background_removed_image * mask).astype(np.uint8)
                 mask = (mask * 255).astype(np.uint8)
+
+                # nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(thresholded_image, connectivity=4)
+                # sizes = stats[:, -1]
+                #
+                # max_label = 1
+                # max_size = sizes[1]
+                # for i in range(2, nb_components):
+                #     if sizes[i] > max_size:
+                #         max_label = i
+                #         max_size = sizes[i]
+                #
+                # img2 = np.zeros(output.shape)
+                # img2[output == max_label] = 255
+                # cv2.imshow("Biggest component", img2)
+                # cv2.waitKey()
+
+                removed_reflections_img_gray = self.remove_reflections(self.preprocessed_image)
+                self.preprocessed_image = removed_reflections_img_gray
 
         attention_mask = cv2.applyColorMap(mask, cv2.COLORMAP_WINTER)
         self.attention_image = np.empty_like(self.scaled_image_rgb)

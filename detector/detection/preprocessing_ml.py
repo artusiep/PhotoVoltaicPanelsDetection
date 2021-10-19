@@ -8,7 +8,7 @@ import numpy as np
 from detector.utils.display import display_image_in_actual_size
 from detector.utils.utils import read_bgr_img
 from models.models_builders import get_model_builder
-from trainer.utils.consts import UNET_6_LAYERS
+from trainer.utils.consts import UNET_6_LAYERS, UNET_4_LAYERS
 
 
 @dataclass
@@ -26,9 +26,9 @@ class PreprocessingMlParams:
     """
     model_name: str
     weight_path: str
-    min_area: int
+    min_area: int = 250 * 250
     gray: bool = True
-    model_image_size: Tuple[int, int] = (128, 128)
+    model_image_size: Tuple[int, int] = (384, 384)
     start_neurons: int = 16
     model_output_threshold: int = 64
     gaussian_blur: int = 11
@@ -106,10 +106,11 @@ class PreprocessorMl:
         """Returns an image with removed the most bright pixels (reflections), based on
         calculated image color histogram
         """
-        hi_percentage = 0.03
+        hi_percentage = 0.05
         if hi_percentage == 0.0:
             return input_image
-        grayed_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+        grayed_image = input_image
+        # grayed_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
 
         # we want the hi_percentage brightest pixels
         hist = cv2.calcHist([grayed_image], [0], None, [256], [0, 256]).flatten()
@@ -153,39 +154,30 @@ class PreprocessorMl:
                 b. Otherwise the entire image is kept as attention.
 
         """
-        removed_reflections_img = self.remove_reflections(self.input_image)
-        blurred_removed_reflections_img = cv2.blur(removed_reflections_img,
-                                                   (self.params.gaussian_blur, self.params.gaussian_blur))
-        step_1_img = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
+        step_1_img = cv2.cvtColor(self.input_image, cv2.COLOR_BGR2GRAY)
         self.scaled_image = step_1_img
 
-        classic_mask = self.classic_image_processing_mask(step_1_img)
         ml_mask = self.ml_image_processing_mask()
+        self.mask = ml_mask
 
-        merged_masks = cv2.bitwise_or(classic_mask, ml_mask)
+        background_removed_image = cv2.bitwise_and(step_1_img, self.mask)
 
-        contours, hierarchy = cv2.findContours(merged_masks, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if cv2.contourArea(contour) > (120 ** 2)]
-        corrected_merged_mask = np.zeros_like(step_1_img)
-        cv2.drawContours(corrected_merged_mask, contours, -1, (255), cv2.FILLED)
-        corrected_merged_mask = corrected_merged_mask.astype(np.uint8)
-
-        self.mask = corrected_merged_mask
-        background_removed_image = cv2.bitwise_and(step_1_img, corrected_merged_mask)
-
-        blurred_mask = cv2.blur(corrected_merged_mask, (40, 40))
+        blurred_mask = cv2.blur(self.mask, (7, 7))
         blurred_mask = blurred_mask.astype(np.float) / 255.
 
-        self.preprocessed_image = (blurred_mask * background_removed_image).astype(np.uint8)
+        blurred_background_removed_image = (blurred_mask * background_removed_image).astype(np.uint8)
+        removed_reflections_image = self.remove_reflections(blurred_background_removed_image)
 
-        attention_mask = cv2.applyColorMap(corrected_merged_mask, cv2.COLORMAP_WINTER)
+        self.preprocessed_image = removed_reflections_image
+
+        attention_mask = cv2.applyColorMap(self.mask, cv2.COLORMAP_WINTER)
         self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image, cv2.COLOR_GRAY2BGR), 0.7, attention_mask,
                                                0.3, 0)
 
 
 if __name__ == '__main__':
     thermal_image = read_bgr_img(
-        '/Users/artursiepietwoski/Developer/Private/PhotoVoltaicPanelsDetection/data/labelme/plasma-DJI_1_R (459).JPG')
-    preprocesor = PreprocessorMl(thermal_image, PreprocessingMlParams(model_name=UNET_6_LAYERS,
-                                                                      weight_path='/Users/artursiepietwoski/Developer/Private/PhotoVoltaicPanelsDetection/neural/trainer/training_result/1_training_unet_6_layers_2021-09-28T00:23:27_gray/cp.ckpt'))
+        '/Users/andrzej.maj/Desktop/Magisterka/PhotoVoltaicPanelsDetection/data/plasma/7.JPG')
+    preprocesor = PreprocessorMl(thermal_image, PreprocessingMlParams(model_name=UNET_4_LAYERS,
+                                                                      weight_path='/Users/andrzej.maj/Desktop/Magisterka/PhotoVoltaicPanelsDetection/detector/configs/models/content/training_result/1_training_unet_4_layers_2021-10-17T23:28:47_gray/cp.ckpt'))
     preprocesor.preprocess()
