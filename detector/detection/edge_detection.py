@@ -78,17 +78,18 @@ class EdgeDetector:
     def strengthen_edges(self, input_image):
         # blurring (probably could be improved, reduced to one)
         blurred_image = cv2.bilateralFilter(input_image, 3, 200, 200)
-        blurred_image = cv2.GaussianBlur(blurred_image, (7, 7), 0)
+        # blurred_image = cv2.GaussianBlur(blurred_image, (7, 7), 0)
 
-        # adaptive thresholding
-        adaptive_threshold = cv2.adaptiveThreshold(blurred_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                   cv2.THRESH_BINARY, 11, 2)
-        denoised_image = cv2.fastNlMeansDenoising(adaptive_threshold, 11, 31, 9)  # 30, 7, 25
         # contrasting
         brightness = 0
         contrast = 64  # contrast_const
 
-        contrasted_image = self.apply_brightness_contrast(denoised_image, brightness, contrast)
+        contrasted_image = self.apply_brightness_contrast(blurred_image, brightness, contrast)
+
+        # adaptive thresholding
+        adaptive_threshold = cv2.adaptiveThreshold(contrasted_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                   cv2.THRESH_BINARY, 11, 2)
+        denoised_image = cv2.fastNlMeansDenoising(adaptive_threshold, 11, 31, 9)  # 30, 7, 25
         return contrasted_image
 
     @staticmethod
