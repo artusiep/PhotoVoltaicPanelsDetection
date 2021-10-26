@@ -1,10 +1,11 @@
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Tuple
 
 import cv2
 import numpy as np
 
+from detector.utils.display import display_image_in_actual_size
 from detector.utils.images import scale_image
 
 
@@ -28,12 +29,7 @@ class EdgeDetectorParams:
 
     kernel_size: Tuple[int, int] = (3, 3)
     kernel_shape: int = cv2.MORPH_CROSS
-    kernel: None = field(init=False, default_factory=tuple)
-
     dilation_steps: int = 4
-
-    def __post_init__(self):
-        self.kernel = cv2.getStructuringElement(self.kernel_shape, self.kernel_size)
 
 
 class EdgeDetector:
@@ -87,13 +83,34 @@ class EdgeDetector:
         # adaptive thresholding
         adaptive_threshold = cv2.adaptiveThreshold(blurred_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                    cv2.THRESH_BINARY, 11, 2)
-        denoised_image = cv2.fastNlMeansDenoising(adaptive_threshold, 9, 21, 7)  # 30, 7, 25
+        denoised_image = cv2.fastNlMeansDenoising(adaptive_threshold, 11, 31, 9)  # 30, 7, 25
         # contrasting
         brightness = 0
         contrast = 64  # contrast_const
 
         contrasted_image = self.apply_brightness_contrast(denoised_image, brightness, contrast)
         return contrasted_image
+
+    @staticmethod
+    def skeletize(dilated, kernel_shape, kernel_size):
+        done = False
+        size = np.size(dilated)
+        skel = np.zeros(dilated.shape, np.uint8)
+        img = dilated
+
+        kernel = cv2.getStructuringElement(kernel_shape, kernel_size)
+        while not done:
+            logging.debug("Eroding canny edges")
+            eroded = cv2.erode(img, kernel)
+            temp = cv2.dilate(eroded, kernel)
+            temp = cv2.subtract(img, temp)
+            skel = cv2.bitwise_or(skel, temp)
+            img = eroded.copy()
+
+            zeros = size - cv2.countNonZero(img)
+            if zeros == size:
+                done = True
+        return skel
 
     def detect(self) -> None:
         """Detects the edges in the image passed to the constructor using the parameters passed to the constructor.
@@ -113,25 +130,12 @@ class EdgeDetector:
         dilated = cv2.dilate(canny, (3, 3), iterations=self.params.dilation_steps)
         logging.debug("Dilate canny edges with {} steps".format(self.params.dilation_steps))
 
-        size = np.size(dilated)
-        skel = np.zeros(dilated.shape, np.uint8)
 
-        img = dilated
-        done = False
+        kernel_shape = self.params.kernel_shape
+        kernel_size = self.params.kernel_size
 
-        kernel_size = (7, 7)
-        kernel_shape = cv2.MORPH_CROSS
-        kernel = cv2.getStructuringElement(kernel_shape, kernel_size)
-        while not done:
-            logging.debug("Eroding canny edges")
-            eroded = cv2.erode(img, kernel)
-            temp = cv2.dilate(eroded, kernel)
-            temp = cv2.subtract(img, temp)
-            skel = cv2.bitwise_or(skel, temp)
-            img = eroded.copy()
+        skel1 = self.skeletize(dilated, kernel_shape, (3,3))
+        skel2 = self.skeletize(dilated, kernel_shape, (5,5))
 
-            zeros = size - cv2.countNonZero(img)
-            if zeros == size:
-                done = True
-
+        skel = cv2.bitwise_or(skel1, skel2)
         self.edge_image = skel

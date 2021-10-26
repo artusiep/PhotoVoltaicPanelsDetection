@@ -9,6 +9,9 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+ENV TF_CPP_MIN_LOG_LEVEL 3
+
+COPY .dockerignore .
 COPY detector_cli.py .
 COPY detector/ detector
 
