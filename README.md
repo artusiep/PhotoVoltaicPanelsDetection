@@ -1,3 +1,4 @@
+[![License: CC BY-NC 4.0](https://licensebuttons.net/l/by-nc/4.0/80x15.png)](https://creativecommons.org/licenses/by-nc/4.0/)
 # PhotoVoltaicPanelDetection
 
 This repository contains solution for automatic detection of solar modules. Main aim was 
