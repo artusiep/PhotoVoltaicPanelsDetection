@@ -6,6 +6,7 @@ import os
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
+from statistics import median
 from typing import Union, List
 
 import cv2
@@ -14,9 +15,10 @@ import pandas as pd
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
 
-from detector.utils.display import display_image_in_actual_size
-from detector.utils.utils import iou_rectangle_annotated_photos
 
+class ExperimentsConfig:
+    experiment_dir = 'exp_22_10_2021'
+    iou_threshold = 0.60
 
 @dataclass
 class ReportResult:
@@ -88,16 +90,16 @@ class Report:
         pred_id_dedup_df = sorted_df.drop_duplicates(subset=[self.PREDICTED_ID], keep='first')
         ground_truth_id_dedup_df = sorted_df.drop_duplicates(subset=[self.GROUND_TRUTH_ID], keep='first')
 
-        found_1 = pred_id_dedup_df[pred_id_dedup_df[self.IOU] >= 0.6]
-        found_2 = ground_truth_id_dedup_df[ground_truth_id_dedup_df[self.IOU] >= 0.6]
-        if found_1.size != found_2.size:
-            raise Exception("Results do not have sense. Number of founded rectangles should be equal/")
-        badly_found = pred_id_dedup_df[pred_id_dedup_df[self.IOU] < 0.6]
-        not_found = ground_truth_id_dedup_df[ground_truth_id_dedup_df[self.IOU] < 0.6]
+        dedup_df = sorted_df.drop_duplicates(subset=[self.PREDICTED_ID], keep='first').drop_duplicates(
+            subset=[self.GROUND_TRUTH_ID], keep='first')
+
+        true_positive = dedup_df[dedup_df[self.IOU] >= ExperimentsConfig().iou_threshold]
+        badly_found = pred_id_dedup_df[~pred_id_dedup_df.isin(true_positive)].dropna()
+        not_found = ground_truth_id_dedup_df[~ground_truth_id_dedup_df.isin(true_positive)].dropna()
 
         self.report = {
             'identifier': self.identifier,
-            'true_positive_df': found_1,
+            'true_positive_df': true_positive,
             'false_negative_df': not_found,
             'false_positive_df': badly_found,
             'ground_truth_rectangles_no': sorted_df[self.GROUND_TRUTH_ID].max() + 1 if sorted_df[
@@ -176,8 +178,8 @@ class ReportGenerator:
         self.generated_reports = (self.generate_one_report(report_obj) for report_obj in self.reports_objs)
         return self.generated_reports
 
-    def generate_one_report(self, report: FromFileReport):
-        evaluation_result_path = f"data/checkpoint/{report.identifier}"
+    def generate_one_report(self, report: FromFileReport) -> Union[dict, None]:
+        evaluation_result_path = f"data/{ExperimentsConfig().experiment_dir}/checkpoint/{report.identifier}"
         if not report.evaluation_result_exist(evaluation_result_path):
             print(f"Creating report for {report.identifier}")
             try:
@@ -192,16 +194,56 @@ class ReportGenerator:
         return report.create_report()
 
 
+def f1score(tp, fp, fn):
+    return tp / (tp + (fp + fn) / 2)
+
+
+def rectangles_f1score(tp_rects, fp_rects, fn_rects):
+    if (len(tp_rects) + 1 / 2 * (len(fp_rects) + len(fn_rects))) != 0:
+        return (len(tp_rects) / (
+                len(tp_rects) + 1 / 2 * (len(fp_rects) + len(fn_rects))))
+    else:
+        return 1
+
+
 if __name__ == '__main__':
-    report_generator = ReportGenerator(glob.glob('data/thermal-modules/*.json'), glob.glob('data/result/*.pickle'))
+    report_generator = ReportGenerator(glob.glob('data/thermal-modules-final/*.json'),
+                                       glob.glob(f'data/{ExperimentsConfig().experiment_dir}/result/*.pickle'))
     generated_reports = report_generator.generate()
+    fscores = []
+    all_true_positive_rects = 0
+    all_false_negative_rects = 0
+    all_false_positive_rects = 0
+    ground_truth_images = 0
 
     for generated_report in generated_reports:
-        path = f"data/thermal/{generated_report['identifier']}.JPG"
+        path = f"data/{ExperimentsConfig().experiment_dir}/thermal/{generated_report['identifier']}.JPG"
         base_image = cv2.imread(path)
-        true_positive_rects = list(generated_report['true_positive_df'][['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
-        false_negative_rects = list(generated_report['false_negative_df'][['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
-        false_positive_rects = list(generated_report['false_positive_df'][['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
+        true_positive_rects = list(generated_report['true_positive_df']
+                                   [['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
+        false_negative_rects = list(generated_report['false_negative_df']
+                                    [['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
+        false_positive_rects = list(generated_report['false_positive_df']
+                                    [['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
         all_rects = true_positive_rects + false_positive_rects + false_negative_rects
-        display_image_in_actual_size(iou_rectangle_annotated_photos(all_rects, base_image))
+
+        # display_image_in_actual_size(iou_rectangle_annotated_photos(all_rects, base_image))
+        all_true_positive_rects = all_true_positive_rects + len(true_positive_rects)
+        all_false_negative_rects = all_false_negative_rects + len(false_negative_rects)
+        all_false_positive_rects = all_false_positive_rects + len(false_positive_rects)
+        ground_truth_images = len(generated_report['ground_truth_rectangles']) + ground_truth_images
+        fscores.append(rectangles_f1score(true_positive_rects, false_positive_rects, false_negative_rects))
+
+    median(fscores)
+
+    import matplotlib.pyplot as plt
+
+    pd.Series(fscores).plot.hist(grid=True, bins=100)
+    plt.title('Commute Times for 1,000 Commuters')
+    plt.xlabel('Counts')
+    plt.ylabel('Commute Time')
+    plt.grid(axis='y', alpha=0.75)
+    plt.show()
+    print(f"Overall f1score: {f1score(all_true_positive_rects, all_false_positive_rects, all_false_negative_rects)}")
+    print(f"Median of f1score: {median(fscores)}")
     print(f"END with {report_generator.errors} errors ")

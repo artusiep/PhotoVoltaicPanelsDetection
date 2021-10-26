@@ -7,17 +7,16 @@ from detector.configs.abstract import Config
 from detector.detection import EdgeDetectorParams, SegmentDetectorParams, SegmentClustererParams, \
     ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
 from detector.detection.preprocessing_ml import PreprocessingMlParams
-from trainer.utils.consts import UNET_6_LAYERS
 
 
 class PlasmaMlConfig(Config):
     __preprocessing_image_scaling = 1
     __edge_image_scaling = 3
     preprocessing_params = PreprocessingMlParams(
-        model_name=UNET_6_LAYERS,
-        weight_path='/Users/artursiepietwoski/Developer/Private/PhotoVoltaicPanelsDetection/neural/trainer/training_result/1_training_unet_6_layers_2021-09-28T00:23:27_gray/cp.ckpt',
+        model_name='unet_6_layers',
+        weight_path='detector/configs/models/content/training_result/1_training_unet_6_layers_2021-09-28T00:23:27_gray/cp.ckpt',
         gray=True,
-        model_image_size=(128, 128),
+        model_image_size=(192,192),
         start_neurons=16,
         gaussian_blur=3,
         model_output_threshold=64,
@@ -34,7 +33,7 @@ class PlasmaMlConfig(Config):
     segment_detector_params = SegmentDetectorParams(
         d_rho=1,
         d_theta=np.pi / 180,
-        min_num_votes=110,
+        min_num_votes=75,
         min_line_length=max(floor(10 * (__edge_image_scaling - 2)), 20),
         max_line_gap=20 * __edge_image_scaling,
         extension_pixels=35 * __edge_image_scaling

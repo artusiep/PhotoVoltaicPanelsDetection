@@ -1,28 +1,30 @@
+import logging
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from typing import Tuple
 
 import cv2
 import numpy as np
 
-from detector.utils.display import display_image_in_actual_size
-from detector.utils.utils import read_bgr_img
-from models.models_builders import get_model_builder
-from trainer.utils.consts import UNET_6_LAYERS
-
 
 @dataclass
 class PreprocessingMlParams:
     """Parameters used by the :class:`.Preprocessor`.
-    Initializes the preprocessing parameters to their default value.
+    Initializes the ML preprocessing parameters to their default value.
 
     Attributes:
-        :param gaussian_blur: Radius of the gaussian blur to apply to the input image.
-        :param image_scaling: Scaling factor to apply to the input image.
-        :param image_rotation: Angle expressed in radiants used to rotate the input image.
-        :param red_threshold: Temperature threshold used to discard `cold` unimportant areas in the image.
+        :param model_name: Name of predefined segmentation model
+        :param weight_path: Path to pretrained models
         :param min_area: Minimal surface of retained `important` areas of the image. Warm regions whose surface
         is smaller than this threshold are discarded.
+        :param gray: Is model trained on grayscale or red
+        :param model_image_size: ML Model output size
+        :param start_neurons: Initial value of trained model
+        :param model_output_threshold: ML Model output is size :param model_image_size: and have float value between 0
+        and 1. This value is normalized to value between 0 and 255. Every value lower then model_output_threshold is
+        set to 0.
+        :param gaussian_blur: Radius of the gaussian blur to apply to the input image.
     """
     model_name: str
     weight_path: str
@@ -65,6 +67,9 @@ class PreprocessorMl:
         :param input_image: RGB or greyscale input image to be preprocessed.
         :param params: Preprocessing parameters.
         """
+        if not Path(params.weight_path).parent.exists() or Path(params.weight_path).name != 'cp.ckpt':
+            logging.error("ML Preprocessing is not available. Licence is required. Try other configs")
+            exit(2)
         self.input_image = input_image
         self.params = params
         self.preprocessed_image = None
@@ -78,6 +83,7 @@ class PreprocessorMl:
     @staticmethod
     @lru_cache
     def prepare_model(params: PreprocessingMlParams):
+        from models.models_builders import get_model_builder
         model = get_model_builder(params.model_name)(params.model_image_size[0], params.model_image_size[1],
                                                      params.channels, params.start_neurons)
         model.load_weights(params.weight_path)
@@ -159,13 +165,12 @@ class PreprocessorMl:
         step_1_img = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
         self.scaled_image_gray = step_1_img
 
-        classic_mask = self.classic_image_processing_mask(step_1_img)
         ml_mask = self.ml_image_processing_mask()
 
-        merged_masks = cv2.bitwise_or(classic_mask, ml_mask)
+        merged_masks = ml_mask
 
         contours, hierarchy = cv2.findContours(merged_masks, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if cv2.contourArea(contour) > (120 ** 2)]
+        contours = [contour for contour in contours if cv2.contourArea(contour) > (40 ** 2)]
         corrected_merged_mask = np.zeros_like(step_1_img)
         cv2.drawContours(corrected_merged_mask, contours, -1, (255), cv2.FILLED)
         corrected_merged_mask = corrected_merged_mask.astype(np.uint8)
@@ -179,13 +184,6 @@ class PreprocessorMl:
         self.preprocessed_image = (blurred_mask * background_removed_image).astype(np.uint8)
 
         attention_mask = cv2.applyColorMap(corrected_merged_mask, cv2.COLORMAP_WINTER)
-        self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image_gray, cv2.COLOR_GRAY2BGR), 0.7, attention_mask,
+        self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image_gray, cv2.COLOR_GRAY2BGR), 0.7,
+                                               attention_mask,
                                                0.3, 0)
-
-
-if __name__ == '__main__':
-    thermal_image = read_bgr_img(
-        '/Users/artursiepietwoski/Developer/Private/PhotoVoltaicPanelsDetection/data/labelme/plasma-DJI_1_R (459).JPG')
-    preprocesor = PreprocessorMl(thermal_image, PreprocessingMlParams(model_name=UNET_6_LAYERS,
-                                                                      weight_path='/Users/artursiepietwoski/Developer/Private/PhotoVoltaicPanelsDetection/neural/trainer/training_result/1_training_unet_6_layers_2021-09-28T00:23:27_gray/cp.ckpt'))
-    preprocesor.preprocess()

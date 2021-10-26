@@ -7,17 +7,16 @@ from detector.configs.abstract import Config
 from detector.detection import EdgeDetectorParams, SegmentDetectorParams, SegmentClustererParams, \
     ClusterCleaningParams, IntersectionDetectorParams, RectangleDetectorParams
 from detector.detection.preprocessing_ml import PreprocessingMlParams
-from trainer.utils.consts import UNET_6_LAYERS, UNET_4_LAYERS
 
 
-class PlasmaMl4Unet256Config(Config):
+class PlasmaMl4Unet384Config(Config):
     __preprocessing_image_scaling = 1
     __edge_image_scaling = 3
     preprocessing_params = PreprocessingMlParams(
-        model_name=UNET_4_LAYERS,
-        weight_path='detector/configs/models/1_training_unet_4_layers_2021-10-17T23:28:47_gray/cp.ckpt',
+        model_name='unet_4_layers',
+        weight_path='detector/configs/models/content/training_result/1_training_unet_4_layers_2021-10-17T23:28:47_gray/cp.ckpt',
         gray=True,
-        model_image_size=(512, 512),
+        model_image_size=(384, 384),
         start_neurons=16,
         gaussian_blur=3,
         model_output_threshold=64,

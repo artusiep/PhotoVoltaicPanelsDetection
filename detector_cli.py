@@ -67,11 +67,11 @@ def process_multiple(file_paths, config, output_dir, labelers, silent):
 
 helps = {
     'multithread': "Multithreaded version of detection. Speed up detection using all available processor resources",
-    'config': "Config Class name. Based on config PV panels are detected from image. "
+    'config': "Config Class name. Based on config PV panels are detected on image. "
               "User can create his own config and place in detector/configs directory. "
               "Class name must be unique",
     'labelers': "Space separated list labeler class name. Labeler serialize detected PV panels to a predefined format. "
-                "Bear in mind that not all label formats are lossless"
+                "Bear in mind that not all label formats are lossless. "
                 "User can create his own config and place in detector/labelers directory.",
     'type': f"Type of input image. When set to '{RAW}' extraction of FLIR image is done using "
             f"color map from 'color-map' parameter",
@@ -82,7 +82,8 @@ helps = {
     'thermal-image-output': "Directory to which extracted images are saved",
     'preprocessed-size': "During preprocessing size of image can change. "
                          "If set, image will have preprocessed image size",
-    'show-step-images': "If set step images of detection will be shown using matplotlib",
+    'show-step-images': "If set step images of detection will be shown using matplotlib. "
+                        "Do noting in docker and can slow down processing.",
     "files": "Space separated list of paths to file detection (and if needed extraction) is done.",
     "input-dir": "Every file from this directory will be processed. Only files with .JPG and .jpg are processed"
 }
