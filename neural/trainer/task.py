@@ -84,13 +84,20 @@ def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, arg
     model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
     model_save_path = get_save_model_path(run_id, model_name, args.to_grayscale)
     callbacks = get_callbacks(model_save_path)
-
-    model.fit(x=x_train,
-              y=y_train,
+    if model_name in [RES_NET_152]:
+        model.fit(x=x_train.astype(np.float32),
+              y=y_train.astype(np.float32),
               validation_split=0.2,
               batch_size=args.batch_size,
               epochs=args.epochs,
               callbacks=callbacks)
+    else:
+        model.fit(x=x_train,
+                  y=y_train,
+                  validation_split=0.2,
+                  batch_size=args.batch_size,
+                  epochs=args.epochs,
+                  callbacks=callbacks)
 
     model.summary()
 
