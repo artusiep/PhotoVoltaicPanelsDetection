@@ -28,7 +28,8 @@ def get_images_and_masks(expected_img_width, expected_img_height, should_resize,
 
     i = 0
     for img_index, img_name in enumerate(img_names):
-        print("")
+        if i % 100:
+            print(f"Loaded {i+1} files...")
         if i % 5 == 0:
             if grayscale:
                 x_test[img_index] = image_to_gray(expected_img_height, expected_img_width, img_name, should_resize)
