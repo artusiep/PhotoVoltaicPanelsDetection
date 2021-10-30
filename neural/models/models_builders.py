@@ -17,6 +17,8 @@ def get_model_builder(model_name):
     elif model_name == RES_NET_152:
         return res_net_152.build_model
     elif model_name == RES_NET_34:
+        return res_net_34.build_model
+    elif model_name == VGG19:
         return vgg19.build_model
     elif model_name == LINKNET:
         return linknet.build_model
