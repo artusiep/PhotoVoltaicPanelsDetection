@@ -13,16 +13,9 @@ def get_callbacks(model_save_path, batch_size):
                                                      save_weights_only=True,
                                                      save_best_only=True,
                                                      verbose=1)
-    tbCallBack = TensorBoard(log_dir='tb_logs',
-                             histogram_freq=1,
-                             write_graph=True,
-                             write_grads=True,
-                             batch_size=batch_size,
-                             write_images=True)
 
     return [
         tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5),
         tf.keras.callbacks.TensorBoard(log_dir=get_logs_dir()),
         cp_callback,
-        tbCallBack
     ]

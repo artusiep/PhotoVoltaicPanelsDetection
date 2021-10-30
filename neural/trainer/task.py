@@ -13,7 +13,8 @@ from trainer import model_builder
 from trainer.utils.callbacks import get_callbacks
 from trainer.utils.read_data import get_images_and_masks
 from trainer.utils.utils import get_save_model_path, get_final_save_model_path
-from utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152
+from utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152, \
+    RES_NET_34, VGG19, LINKNET, FPN
 
 
 def get_args():
@@ -65,7 +66,8 @@ def get_args():
         default='INFO')
     parser.add_argument(
         '--models',
-        choices=[UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152],
+        choices=[UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152, RES_NET_34,
+                 VGG19, LINKNET, FPN],
         nargs='+',
         required=True
     )
@@ -84,13 +86,20 @@ def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, arg
     model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
     model_save_path = get_save_model_path(run_id, model_name, args.to_grayscale)
     callbacks = get_callbacks(model_save_path, args.batch_size)
-    if model_name in [RES_NET_152]:
-        model.fit(x=x_train.astype(np.float32),
-              y=y_train.astype(np.float32),
-              validation_split=0.2,
-              batch_size=args.batch_size,
-              epochs=args.epochs,
-              callbacks=callbacks)
+    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN]:
+        import segmentation_models as sm
+        try:
+            preprocess_input = sm.get_preprocessing(model_name)
+        except Exception:
+            preprocess_input = sm.get_preprocessing('resnet34')
+        x = preprocess_input(x_train.astype(np.float32))
+        y = preprocess_input(y_train.astype(np.float32))
+        model.fit(x=x,
+                  y=y,
+                  validation_split=0.2,
+                  batch_size=args.batch_size,
+                  epochs=args.epochs,
+                  callbacks=callbacks)
     else:
         model.fit(x=x_train,
                   y=y_train,
@@ -102,7 +111,10 @@ def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, arg
     model.summary()
 
     print("[LOG] Evaluating model")
-    loss, acc = model.evaluate(x_test, y_test, verbose=1)
+    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN]:
+        loss, acc = model.evaluate(x_test.astype(np.float32), y_test.astype(np.float32), verbose=1)
+    else:
+        loss, acc = model.evaluate(x_test, y_test, verbose=1)
     print("[LOG] Current model accuracy: {:5.2f}%".format(100 * acc))
 
     pred_test = model.predict(x_test, verbose=1)

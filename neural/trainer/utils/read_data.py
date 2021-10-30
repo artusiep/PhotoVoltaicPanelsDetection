@@ -1,10 +1,17 @@
 import os
 from functools import lru_cache
 
+import cv2
 import numpy as np
 from skimage.color import rgb2gray
 from skimage.io import imread
 from skimage.transform import resize
+from math import ceil
+from pathlib import Path
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 
 from trainer.utils.paths_definition import get_images_dir, get_panels_masks_dir
 
@@ -57,18 +64,36 @@ def image_to_gray(expected_img_height, expected_img_width, img_name, should_resi
 
 
 def resize_and_get_mask(expected_img_height, expected_img_width, img_name, should_resize=False):
-    img = imread(panels_masks_dir + img_name)
+    img = cv2.cvtColor(cv2.imread(panels_masks_dir + img_name), cv2.COLOR_BGR2GRAY)
     if should_resize:
-        img = resize(img, (expected_img_height, expected_img_width), mode='constant', preserve_range=True)
-    grey_img = rgb2gray(img)
-    grey_img = np.expand_dims(grey_img, axis=-1)
+        img = cv2.resize(img, (expected_img_height, expected_img_width))
+    grey_img = np.expand_dims(img, axis=-1)
     return grey_img
 
 
 def resize_and_get_image(expected_img_height, expected_img_width, img_name, should_resize=False):
-    img = imread(images_dir + img_name)
+    img = cv2.cvtColor(cv2.imread(images_dir + img_name), cv2.COLOR_BGR2RGB)
     if should_resize:
-        img = resize(img, (expected_img_height, expected_img_width), mode='constant', preserve_range=True)
+        img = cv2.resize(img, (expected_img_height, expected_img_width))
     return img
 
 
+
+def display_image_in_actual_size(base_image: np.ndarray, windows_name=None, rgb=False):
+    if rgb:
+        base_image = cv2.cvtColor(base_image, cv2.COLOR_RGBA2RGB)
+    else:
+        base_image = cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB)
+    height, width, depth = base_image.shape
+
+    figsize = width / 100, height / 100
+
+    fig = plt.figure(figsize=figsize)
+    window = fig.add_axes([0, 0, 1, 1])
+
+    # Hide spines, ticks, etc.
+    window.axis('off')
+
+    window.imshow(base_image)
+    plt.title(windows_name)
+    plt.show()

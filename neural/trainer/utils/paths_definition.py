@@ -18,7 +18,7 @@ OUTPUT_IMAGES_WITH_MASKS_DIR = {
 }
 
 MODEL_SAVE_DIR = {
-    'local': 'training_result/{is_final}{run_id}_training_{model}_{timestamp}_{grayscale}{f1_score}/',
+    'local': 'drive/MyDrive/models/colab/{is_final}{run_id}_training_{model}_{timestamp}_{grayscale}{f1_score}/',
     'cloud': 'training_result/{is_final}{run_id}_training_{model}_{timestamp}_{grayscale}{f1_score}/'
 }
 
