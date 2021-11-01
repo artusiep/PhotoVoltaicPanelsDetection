@@ -3,12 +3,12 @@ import os
 from trainer.utils.os_variable_utils import get_profile_name
 
 INPUT_THERMAL_IMAGES_DIR = {
-    'local': os.path.join(os.path.dirname(__file__), '../../data/input/'),
+    'local': os.path.join(os.path.dirname(__file__), '../../data/merged/input/'),
     'cloud': '/home/maciek/data/case_images/'
 }
 
 INPUT_MASKS_DIR = {
-    'local': os.path.join(os.path.dirname(__file__), '../../data/ground_truth/'),
+    'local': os.path.join(os.path.dirname(__file__), '../../data/merged/ground_truth/'),
     'cloud': '/home/maciek/data/case_masks/'
 }
 
