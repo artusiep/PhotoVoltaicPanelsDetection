@@ -16,6 +16,6 @@ def get_callbacks(model_save_path, batch_size):
 
     return [
         tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5),
-        tf.keras.callbacks.TensorBoard(log_dir=get_logs_dir()),
+        tf.keras.callbacks.TensorBoard(log_dir=get_logs_dir(), batch_size=batch_size),
         cp_callback,
     ]

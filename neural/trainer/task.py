@@ -82,6 +82,30 @@ def train_and_evaluate_models(args):
             train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args)
 
 
+def evaluate(model_name, model_save_path, x_test, y_test, run_id):
+    model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
+    model.load_weights(model_save_path)
+    print("[LOG] Evaluating model")
+    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN]:
+        loss, acc = model.evaluate(x_test.astype(np.float32), y_test.astype(np.float32), verbose=1)
+    else:
+        loss, acc = model.evaluate(x_test, y_test, verbose=1)
+    print("[LOG] Current model accuracy: {:5.2f}%".format(100 * acc))
+
+    pred_test = model.predict(x_test, verbose=1)
+
+    model_export_path = os.path.join(args.job_dir, model_save_path)
+    tf.keras.models.save_model(model, model_export_path)
+
+    pred_test = (pred_test > 0.6).astype(np.uint8)
+    f1score = f1_score(y_test.flatten().flatten(), pred_test.flatten().flatten())
+    print(f'[LOG] F1 score: {f1score}')
+
+    final_model_path = get_final_save_model_path(run_id, model_name, f1score, args.to_grayscale)
+    model_export_f1_score_path = os.path.join(args.job_dir, final_model_path)
+    tf.keras.models.save_model(model, model_export_f1_score_path)
+
+
 def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args):
     model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
     model_save_path = get_save_model_path(run_id, model_name, args.to_grayscale)
@@ -107,28 +131,7 @@ def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, arg
                   batch_size=args.batch_size,
                   epochs=args.epochs,
                   callbacks=callbacks)
-
-    model.summary()
-
-    print("[LOG] Evaluating model")
-    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN]:
-        loss, acc = model.evaluate(x_test.astype(np.float32), y_test.astype(np.float32), verbose=1)
-    else:
-        loss, acc = model.evaluate(x_test, y_test, verbose=1)
-    print("[LOG] Current model accuracy: {:5.2f}%".format(100 * acc))
-
-    pred_test = model.predict(x_test, verbose=1)
-
-    model_export_path = os.path.join(args.job_dir, model_save_path)
-    tf.keras.models.save_model(model, model_export_path)
-
-    pred_test = (pred_test > 0.6).astype(np.uint8)
-    f1score = f1_score(y_test.flatten().flatten(), pred_test.flatten().flatten())
-    print(f'[LOG] F1 score: {f1score}')
-
-    final_model_path = get_final_save_model_path(run_id, model_name, f1score, args.to_grayscale)
-    model_export_f1_score_path = os.path.join(args.job_dir, final_model_path)
-    tf.keras.models.save_model(model, model_export_f1_score_path)
+    evaluate(model_name, model_save_path, x_test, y_test, run_id)
 
 
 if __name__ == '__main__':
