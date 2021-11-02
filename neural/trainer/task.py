@@ -14,7 +14,7 @@ from trainer.utils.callbacks import get_callbacks
 from trainer.utils.read_data import get_images_and_masks
 from trainer.utils.utils import get_save_model_path, get_final_save_model_path
 from utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152, \
-    RES_NET_34, VGG19, LINKNET, FPN
+    RES_NET_34, VGG19, LINKNET, FPN, MOBILENETV2
 
 
 def get_args():
@@ -67,7 +67,7 @@ def get_args():
     parser.add_argument(
         '--models',
         choices=[UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152, RES_NET_34,
-                 VGG19, LINKNET, FPN],
+                 VGG19, LINKNET, FPN, MOBILENETV2],
         nargs='+',
         required=True
     )
@@ -86,7 +86,7 @@ def evaluate(model_name, model_save_path, x_test, y_test, run_id):
     model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
     model.load_weights(model_save_path)
     print("[LOG] Evaluating model")
-    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN]:
+    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN, MOBILENETV2]:
         loss, acc = model.evaluate(x_test.astype(np.float32), y_test.astype(np.float32), verbose=1)
     else:
         loss, acc = model.evaluate(x_test, y_test, verbose=1)
@@ -110,7 +110,7 @@ def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, arg
     model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
     model_save_path = get_save_model_path(run_id, model_name, args.to_grayscale)
     callbacks = get_callbacks(model_save_path, args.batch_size)
-    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN]:
+    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN, MOBILENETV2]:
         import segmentation_models as sm
         try:
             preprocess_input = sm.get_preprocessing(model_name)
