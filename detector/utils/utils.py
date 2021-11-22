@@ -12,6 +12,7 @@ def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):
     :param rectangles: List of rectangles.
     :param base_image: Base image over which to render the rectangles.
     """
+    base_image = np.copy(base_image)
     mean_color = np.mean(base_image, axis=(0, 1))
     mask = np.zeros_like(base_image)
     if mean_color[0] == mean_color[1] == mean_color[2]:
@@ -25,12 +26,11 @@ def rectangle_annotated_photos(rectangles: list, base_image: np.ndarray):
         x_central, y_central, width, height = calculate_centers(rectangle)
         cv2.circle(mask, (x_central, y_central), radius=4, color=(0, 0, 0), thickness=2)
 
-    cv2.addWeighted(base_image, 1, mask, 0.5, 0, base_image)
-
-    return base_image
+    return cv2.addWeighted(base_image, 1, mask, 0.5, 0)
 
 
 def iou_rectangle_annotated_photos(zip_rectangles: list, base_image: np.ndarray):
+    base_image = np.copy(base_image)
     mean_color = np.mean(base_image, axis=(0, 1))
     if mean_color[0] == mean_color[1] == mean_color[2]:
         mean_color = np.array([255, 255, 0])

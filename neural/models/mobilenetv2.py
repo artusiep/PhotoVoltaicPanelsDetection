@@ -5,5 +5,5 @@ def build_model(img_width, img_height, channels_number, start_neurons=16):
     model.summary()
     model.compile(optimizer='adam', loss=sm.losses.bce_jaccard_loss, metrics=[sm.metrics.iou_score])
 
-    print("[LOG] ResNet34 model built.")
+    print("[LOG] MobileNetV2 model built.")
     return model
