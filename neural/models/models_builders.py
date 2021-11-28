@@ -1,8 +1,8 @@
 from models import unet_4_layers, dense_unet_4_layers, unet_6_layers, plus_plus_unet_4_layers, res_net_152, res_net_34, \
-    linknet, vgg19, fpn, mobilenetv2
+    linknet, vgg19, fpn, mobilenetv2, unet_4_layers_enh
 
 from trainer.utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_PLUS_PLUS_4_LAYERS, UNET_DENSE_4_LAYERS, \
-    RES_NET_152, VGG19, RES_NET_34, LINKNET, FPN, MOBILENETV2
+    RES_NET_152, VGG19, RES_NET_34, LINKNET, FPN, MOBILENETV2, UNET_4_LAYERS_ENH
 
 
 def get_model_builder(model_name):
@@ -26,3 +26,5 @@ def get_model_builder(model_name):
         return fpn.build_model
     elif model_name == MOBILENETV2:
         return mobilenetv2.build_model
+    elif model_name == UNET_4_LAYERS_ENH:
+        return unet_4_layers_enh.build_model

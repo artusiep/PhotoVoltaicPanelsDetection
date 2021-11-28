@@ -4,7 +4,9 @@ from __future__ import print_function
 
 import argparse
 import os
+import time
 
+import humanize
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import f1_score
@@ -14,7 +16,9 @@ from trainer.utils.callbacks import get_callbacks
 from trainer.utils.read_data import get_images_and_masks
 from trainer.utils.utils import get_save_model_path, get_final_save_model_path
 from utils.consts import UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152, \
-    RES_NET_34, VGG19, LINKNET, FPN, MOBILENETV2
+    RES_NET_34, VGG19, LINKNET, FPN, MOBILENETV2, UNET_4_LAYERS_ENH
+
+_t = humanize.i18n.activate("pl")
 
 
 def get_args():
@@ -67,7 +71,7 @@ def get_args():
     parser.add_argument(
         '--models',
         choices=[UNET_4_LAYERS, UNET_6_LAYERS, UNET_DENSE_4_LAYERS, UNET_PLUS_PLUS_4_LAYERS, RES_NET_152, RES_NET_34,
-                 VGG19, LINKNET, FPN, MOBILENETV2],
+                 VGG19, LINKNET, FPN, MOBILENETV2, UNET_4_LAYERS_ENH],
         nargs='+',
         required=True
     )
@@ -86,7 +90,7 @@ def evaluate(model_name, model_save_path, x_test, y_test, run_id):
     model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
     model.load_weights(model_save_path)
     print("[LOG] Evaluating model")
-    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN, MOBILENETV2]:
+    if model_name in [RES_NET_152, RES_NET_34, VGG19, LINKNET, FPN, MOBILENETV2, UNET_4_LAYERS_ENH]:
         loss, acc = model.evaluate(x_test.astype(np.float32), y_test.astype(np.float32), verbose=1)
     else:
         loss, acc = model.evaluate(x_test, y_test, verbose=1)
@@ -107,6 +111,7 @@ def evaluate(model_name, model_save_path, x_test, y_test, run_id):
 
 
 def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, args):
+    t0 = time.time()
     model = model_builder.build(model_name, args.img_size, 1 if args.to_grayscale else 3, args.start_neurons)
     model_save_path = get_save_model_path(run_id, model_name, args.to_grayscale)
     callbacks = get_callbacks(model_save_path, args.batch_size)
@@ -125,13 +130,16 @@ def train_and_evaluate(run_id, model_name, x_train, y_train, x_test, y_test, arg
                   epochs=args.epochs,
                   callbacks=callbacks)
     else:
-        model.fit(x=x_train,
-                  y=y_train,
+        model.fit(x=x_train.astype(np.float32),
+                  y=y_train.astype(np.float32),
                   validation_split=0.2,
                   batch_size=args.batch_size,
                   epochs=args.epochs,
                   callbacks=callbacks)
+    t1 = time.time()
     evaluate(model_name, model_save_path, x_test, y_test, run_id)
+    print(
+        f"Learning time: {humanize.precisedelta(t1 - t0)}, evaluation time: {humanize.precisedelta(time.time() - t1)}")
 
 
 if __name__ == '__main__':

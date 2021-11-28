@@ -214,6 +214,11 @@ class Detector:
     @staticmethod
     def main(image_path: str, config: Config, labelers: List[Type[RectangleLabeler]] = None, labels_path: str = None,
              silent: bool = True):
+        if isinstance(config.preprocessing_params, PreprocessingParams):
+            preprocessing_func = Detector.preprocess_image_functional
+        else:
+            preprocessing_func = Detector.preprocess_ml_image_functional
+
         start_time = datetime.now()
         thermal_image = read_bgr_img(image_path)
 
@@ -222,10 +227,6 @@ class Detector:
         #     undistorted_image = cv2.undistort(src=distorted_image)
         # else:
         #     undistorted_image = distorted_image
-        if isinstance(config.preprocessing_params, PreprocessingParams):
-            preprocessing_func = Detector.preprocess_image_functional
-        else:
-            preprocessing_func = Detector.preprocess_ml_image_functional
 
         preprocessed_image, scaled_image_rgb, mask = preprocessing_func(thermal_image,
                                                                         config.preprocessing_params,

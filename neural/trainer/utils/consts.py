@@ -1,4 +1,5 @@
 UNET_4_LAYERS = 'unet_4_layers'
+UNET_4_LAYERS_ENH = 'unet_4_layers_enh'
 UNET_6_LAYERS = 'unet_6_layers'
 UNET_DENSE_4_LAYERS = 'unet_dense_4_layers'
 UNET_PLUS_PLUS_4_LAYERS = 'unet_plus_plus_4_layers'
