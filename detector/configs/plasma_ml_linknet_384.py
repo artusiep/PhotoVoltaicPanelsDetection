@@ -22,7 +22,7 @@ class PlasmaMlLinknet384Config(Config):
         model_image_size=(384, 384),
         start_neurons=16,
         gaussian_blur=3,
-        model_output_threshold=64,
+        model_output_threshold=32,
         min_area=(120 * __preprocessing_image_scaling) ** 2
     )
     edge_detector_params = EdgeDetectorParams(
@@ -36,7 +36,7 @@ class PlasmaMlLinknet384Config(Config):
     segment_detector_params = SegmentDetectorParams(
         d_rho=1,
         d_theta=np.pi / 180,
-        min_num_votes=75,
+        min_num_votes=60,
         min_line_length=max(floor(10 * (__edge_image_scaling - 2)), 20),
         max_line_gap=20 * __edge_image_scaling,
         extension_pixels=35 * __edge_image_scaling

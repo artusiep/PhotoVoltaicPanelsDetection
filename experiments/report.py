@@ -12,6 +12,7 @@ from typing import Union, List
 
 import cv2
 import humanize as humanize
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
@@ -227,6 +228,7 @@ def rectangles_f1score(tp_rects, fp_rects, fn_rects):
     else:
         return 1
 
+
 def display_selected_image(generated_report, all_rects, base_image, image_id):
     if generated_report['identifier'] == image_id:
         display_image_in_actual_size(iou_rectangle_annotated_photos(all_rects, base_image), 'result.png')
@@ -236,6 +238,7 @@ def display_selected_image(generated_report, all_rects, base_image, image_id):
         display_image_in_actual_size(
             rectangle_annotated_photos(list(np.array(generated_report['pred_rectangles'])), base_image),
             'pred_rectangles.png')
+
 
 def main(experiments_config):
     report_generator = ReportGenerator(glob.glob('data/thermal-modules-final/*.json'),
@@ -258,7 +261,7 @@ def main(experiments_config):
         false_positive_rects = list(generated_report['false_positive_df']
                                     [['ground_truth_rect', 'predicted_rect', 'IOU']].itertuples(index=False, name=None))
         all_rects = true_positive_rects + false_positive_rects + false_negative_rects
-        display_selected_image(generated_report, all_rects, base_image, 'plasma-DJI_2_R (904)')
+        # display_selected_image(generated_report, all_rects, base_image, 'plasma-DJI_2_R (904)')
         all_true_positive_rects = all_true_positive_rects + len(true_positive_rects)
         all_false_negative_rects = all_false_negative_rects + len(false_negative_rects)
         all_false_positive_rects = all_false_positive_rects + len(false_positive_rects)
@@ -288,8 +291,10 @@ def main(experiments_config):
         f"50 - {np.nanpercentile(fscores, 50)}, "
         f"25 - {np.nanpercentile(fscores, 25)}"
     )
+    print("True positives:", all_true_positive_rects, "False positives", all_false_positive_rects, "False Negatives",
+          all_false_negative_rects)
     print(
-        f"{median_f1score:.4f} & {overall_f1score:.4f} & {humanize.precisedelta(detection_duration)} & {humanize.precisedelta(median_duration)}".replace(
+        f"{median_f1score:.4f} & {overall_f1score:.4f} & {humanize.precisedelta(detection_duration)} & {humanize.precisedelta(median_duration)} & {all_true_positive_rects} & {all_false_positive_rects} & {all_false_negative_rects}".replace(
             '.', ','))
     return fscores
 
@@ -341,35 +346,42 @@ def plot_single(df, color, filename, cumulative=False, show=True):
 
 if __name__ == '__main__':
     configs = [
-        ExperimentsConfig(experiment_dir='single-non-ml', name='Single Non ML'),
-        ExperimentsConfig(experiment_dir='single-4unet', name='Single 4 Unet'),
-        ExperimentsConfig(experiment_dir='single-linknet', name='Single Linknet'),
+        # ExperimentsConfig(experiment_dir='single-non-ml', name='Single Non ML'),
+        # ExperimentsConfig(experiment_dir='single-4unet', name='Single 4 Unet'),
+        # ExperimentsConfig(experiment_dir='single-linknet', name='Single Linknet'),
         ExperimentsConfig(experiment_dir='mutli-non-ml', name='Multithreading Non ML'),
-        ExperimentsConfig(experiment_dir='multiproc-4unet', name='Multithreading 4 Unet'),
-        ExperimentsConfig(experiment_dir='multi-linknet', name='Multithreading Linknet'),
+        # ExperimentsConfig(experiment_dir='multiproc-4unet-2', name='Multithreading 4 Unet'),
+        # ExperimentsConfig(experiment_dir='multiproc-4unet-3', name='Multithreading 4 Unet'),
+        # ExperimentsConfig(experiment_dir='multiproc-4unet-4', name='Multithreading 4 Unet'),
+        ExperimentsConfig(experiment_dir='multiproc-4unet-5', name='Multithreading 4 Unet'),
+        # ExperimentsConfig(experiment_dir='multi-linknet', name='Multithreading Linknet'),
+        ExperimentsConfig(experiment_dir='multi-linknet-2', name='Multithreading Linknet'),
     ]
     fscores = [main(config) for config in configs]
 
-    import matplotlib.pyplot as plt
-
-    np.array(fscores)
-    print_histogram(10, fscores, ['zwyczajna', 'autorska', 'linknet'], filename="data/60/overview", show=False)
+    # #
+    # np.array(fscores)
+    print_histogram(10, fscores, ['klasyczna', 'autorska', 'linknet'], filename="data/60/overview", show=False)
     plot_single(pd.DataFrame({'zwyczajna': fscores[0]}), color='royalblue', filename="data/60/zwyczajna", show=False)
     plot_single(pd.DataFrame({'autorska': fscores[1]}), color='orange', filename="data/60/autorska", show=False)
     plot_single(pd.DataFrame({'linknet': fscores[2]}), color='forestgreen', filename="data/60/linknet", show=False)
-
+    # #
     configs = [
         ExperimentsConfig(experiment_dir='single-non-ml', name='Single Non ML', iou_threshold=0.75),
-        ExperimentsConfig(experiment_dir='single-4unet', name='Single 4 Unet', iou_threshold=0.75),
-        ExperimentsConfig(experiment_dir='single-linknet', name='Single Linknet', iou_threshold=0.75),
-        ExperimentsConfig(experiment_dir='mutli-non-ml', name='Multithreading Non ML'),
-        ExperimentsConfig(experiment_dir='multiproc-4unet', name='Multithreading 4 Unet'),
-        ExperimentsConfig(experiment_dir='multi-linknet', name='Multithreading Linknet'),
+        # ExperimentsConfig(experiment_dir='single-4unet', name='Single 4 Unet', iou_threshold=0.75),
+        # ExperimentsConfig(experiment_dir='single-linknet', name='Single Linknet', iou_threshold=0.75),
+        # ExperimentsConfig(experiment_dir='mutli-non-ml', name='Multithreading Non ML', iou_threshold=0.75),
+        ExperimentsConfig(experiment_dir='multiproc-4unet-5', name='Multithreading 4 Unet', iou_threshold=0.75),
+        # ExperimentsConfig(experiment_dir='multiproc-4unet-2', name='Multithreading 4 Unet', iou_threshold=0.75),
+        # ExperimentsConfig(experiment_dir='multiproc-4unet-3', name='Multithreading 4 Unet', iou_threshold=0.75),
+        # ExperimentsConfig(experiment_dir='multiproc-4unet-4', name='Multithreading 4 Unet', iou_threshold=0.75),
+        # ExperimentsConfig(experiment_dir='multi-linknet', name='Multithreading Linknet', iou_threshold=0.75),
+        ExperimentsConfig(experiment_dir='multi-linknet-2', name='Multithreading Linknet', iou_threshold=0.75),
     ]
     fscores = [main(config) for config in configs]
-
-    np.array(fscores)
-    print_histogram(10, fscores, ['zwyczajna', 'autorska', 'linknet'], filename="data/75/overview", show=False)
+    # #
+    # # np.array(fscores)
+    print_histogram(10, fscores, ['klasyczna', 'autorska', 'linknet'], filename="data/75/overview", show=False)
     plot_single(pd.DataFrame({'zwyczajna': fscores[0]}), color='royalblue', filename="data/75/zwyczajna", show=False)
     plot_single(pd.DataFrame({'autorska': fscores[1]}), color='orange', filename="data/75/autorska", show=False)
     plot_single(pd.DataFrame({'linknet': fscores[2]}), color='forestgreen', filename="data/75/linknet", show=False)

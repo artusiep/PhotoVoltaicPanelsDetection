@@ -9,6 +9,7 @@ from multiprocessing import Pool
 from detector.configs.abstract import Config
 from detector.detector import Detector
 from detector.extractor.extractor import ThermalImageExtractor
+from detector.extractor.extractor_2 import FastThermalImageExtractor
 from detector.labelers.abstract import RectangleLabeler
 from detector.logger import init_logger
 from detector.utils.cli import extant_file, dir_path, dir_path_to_create
@@ -120,27 +121,33 @@ def parse_arguments():
         files = args.files
     files = iter(files)
 
-    if args.type == RAW:
-        thermal_files = (
-            ThermalImageExtractor.get_thermal_image_file_path(
-                file,
-                args.color_map,
-                args.thermal_image_output
-            ) for file in files)
-        files = thermal_files
-    else:
-        files = (files,)
+    with FastThermalImageExtractor() as extractor:
+        if args.type == RAW:
+            thermal_files = (
+                extractor.get_thermal_image_file_path(
+                    file,
+                    args.color_map,
+                    args.thermal_image_output
+                ) for file in files)
+            files = thermal_files
+        else:
+            files = (files,)
 
-    process(
-        multithread=args.multithread,
-        file_paths=files,
-        config=Config.get_subclass_by_name(args.config),
-        silent=not args.show_step_images,
-        labelers=[RectangleLabeler.get_subclass_by_name(labeler) for labeler in args.labelers],
-        output_dir=args.output_dir
-    )
-    return args
+        process(
+            multithread=args.multithread,
+            file_paths=files,
+            config=Config.get_subclass_by_name(args.config),
+            silent=not args.show_step_images,
+            labelers=[RectangleLabeler.get_subclass_by_name(labeler) for labeler in args.labelers],
+            output_dir=args.output_dir
+        )
+        return args
 
 
 if __name__ == '__main__':
     parse_arguments()
+
+
+mysql -h r.main.db.production.service -u emr_sqoop -p
+
+# Y3iAw11#!#0u$$Y*2!GD9PaIRK5aTgg1g
