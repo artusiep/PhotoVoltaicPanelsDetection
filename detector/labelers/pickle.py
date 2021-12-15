@@ -11,7 +11,8 @@ class PickleLabeler(RectangleLabeler):
         return {
             'image_path': self.label_path,
             'abs_image_path': os.path.abspath(self.label_path),
-            'rectangles': self.labels_collector
+            'rectangles': self.labels_collector,
+            'tags': self.tags
         }
 
     def label_image(self):

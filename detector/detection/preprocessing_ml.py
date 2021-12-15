@@ -7,6 +7,8 @@ from typing import Tuple
 import cv2
 import numpy as np
 
+from detector.utils.display import display_image_in_actual_size
+
 
 @dataclass
 class PreprocessingMlParams:
@@ -100,9 +102,12 @@ class PreprocessorMl:
     def ml_to_original_size(self, result_image):
         # Maybe consider other interpolation
         result_image = (result_image.reshape(*self.params.model_image_size) * 255).astype('uint8')
+        # display_image_in_actual_size(result_image, "ml/4result_image")
         result_scaled_image = cv2.resize(result_image, dsize=self.input_image.shape[1::-1])
+        # display_image_in_actual_size(result_scaled_image, "ml/5result_scaled_image")
         ret, threshold_image = cv2.threshold(result_scaled_image, self.params.model_output_threshold, 255,
                                              cv2.THRESH_BINARY)
+        # display_image_in_actual_size(threshold_image, "ml/6threshold_image")
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         mask = cv2.morphologyEx(threshold_image, cv2.MORPH_OPEN, kernel, iterations=2)
         self.mask = mask
@@ -145,7 +150,9 @@ class PreprocessorMl:
 
     def ml_image_processing_mask(self):
         image = self.ml_prepare_image()
+        # display_image_in_actual_size(image[0], "ml/3prepaired_image")
         result_image = self.model.predict(image, use_multiprocessing=True)
+
         return self.ml_to_original_size(result_image)
 
     def preprocess(self) -> None:
@@ -160,28 +167,36 @@ class PreprocessorMl:
 
         """
         removed_reflections_img = self.remove_reflections(self.input_image)
+        # display_image_in_actual_size(removed_reflections_img, "ml/1removed_reflections")
         blurred_removed_reflections_img = cv2.blur(removed_reflections_img,
                                                    (self.params.gaussian_blur, self.params.gaussian_blur))
+        # display_image_in_actual_size(blurred_removed_reflections_img, "ml/2blurred_removed_reflections")
         step_1_img = cv2.cvtColor(blurred_removed_reflections_img, cv2.COLOR_BGR2GRAY)
+        # display_image_in_actual_size(step_1_img, "ml/2.5gray_blurred_removed_reflections")
         self.scaled_image_gray = step_1_img
 
         ml_mask = self.ml_image_processing_mask()
 
         merged_masks = ml_mask
 
+        # display_image_in_actual_size(ml_mask, "ml/7ml_mask")
         contours, hierarchy = cv2.findContours(merged_masks, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         contours = [contour for contour in contours if cv2.contourArea(contour) > (40 ** 2)]
         corrected_merged_mask = np.zeros_like(step_1_img)
         cv2.drawContours(corrected_merged_mask, contours, -1, (255), cv2.FILLED)
         corrected_merged_mask = corrected_merged_mask.astype(np.uint8)
+        # display_image_in_actual_size(corrected_merged_mask, "ml/8ml_mask_without_small_conturos")
 
         self.mask = corrected_merged_mask
         background_removed_image = cv2.bitwise_and(step_1_img, corrected_merged_mask)
+        # display_image_in_actual_size(background_removed_image, "ml/9background_removed_image")
 
-        blurred_mask = cv2.blur(corrected_merged_mask, (40, 40))
+        blurred_mask = cv2.blur(corrected_merged_mask, (10, 10))
         blurred_mask = blurred_mask.astype(np.float) / 255.
 
         self.preprocessed_image = (blurred_mask * background_removed_image).astype(np.uint8)
+        # display_image_in_actual_size(self.preprocessed_image, "ml/10preprocessed_image")
+
 
         attention_mask = cv2.applyColorMap(corrected_merged_mask, cv2.COLORMAP_WINTER)
         self.attention_image = cv2.addWeighted(cv2.cvtColor(self.scaled_image_gray, cv2.COLOR_GRAY2BGR), 0.7,

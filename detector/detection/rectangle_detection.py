@@ -26,28 +26,30 @@ class RectangleDetector:
     """Class responsible for detecting rectangles given a structured intersection list."""
 
     def __init__(self, input_intersections: dict, params: RectangleDetectorParams = RectangleDetectorParams()):
-        """Initializes the rectangle detector with the input intersections and the rectangle detection parameters."""
+        """
+        Initializes the rectangle detector with the input intersections and the rectangle detection parameters.
+        """
         self.intersections = input_intersections
         self.params = params
 
         self.rectangles = []
 
     def detect(self) -> None:
-        """Detects the rectangles from the input intersections.
         """
-        # Logger.debug("Detecting rectangles")
+        Detects the rectangles from the input intersections.
+        """
         # Iterate over each pair of clusters.
         num_clusters = int((np.sqrt(8 * len(self.intersections) + 1) + 1) / 2)
         for cluster_index_i in range(num_clusters):
             for cluster_index_j in range(cluster_index_i + 1, num_clusters):
                 if (cluster_index_i, cluster_index_j) in self.intersections:
-                    # Logger.debug("Detecting rectangles between cluster {} and cluster {}".format(cluster_index_i,
-                    #                                                                              cluster_index_j))
-                    self.__detect_rectangles_between_clusters(cluster_index_i, cluster_index_j)
+                    self.__detect_rectangles_between_clusters(
+                        cluster_index_i, cluster_index_j)
 
     @staticmethod
     def fulfills_ratio(rectangle: np.ndarray, expected_ratio: float, deviation: float) -> bool:
-        """Computes wether a rectangle defined as a set of four coordinates fulfills a predefined aspect ratio within a maximal deviation.
+        """
+        Computes whether a rectangle defined as a set of four coordinates fulfills a predefined aspect ratio within a maximal deviation.
 
         :param rectangle: Rectangle to be tested defined as a set of four pixel coordinates as a numpy array of shape `[4,2]`.
         :param expected_ratio: Expected aspect ratio of the rectangle.
@@ -81,9 +83,11 @@ class RectangleDetector:
                     coord4 = intersections_with_i_plus[segment_index_j + 1]
                     rectangle = np.array([coord1, coord2, coord4, coord3])
                     rectangle = sort_rectangle(rectangle)
-                    if self.fulfills_ratio(rectangle, self.params.aspect_ratio,
-                                           self.params.aspect_ratio_relative_deviation) and \
-                            area(rectangle) >= self.params.min_area:
+                    if self.fulfills_ratio(
+                            rectangle,
+                            self.params.aspect_ratio,
+                            self.params.aspect_ratio_relative_deviation
+                    ) and area(rectangle) >= self.params.min_area:
                         rectangles_between_cluster_i_j.append(rectangle)
 
         self.rectangles.extend(rectangles_between_cluster_i_j)

@@ -131,7 +131,7 @@ class Preprocessor:
                 # Perform dilation and erosion on the thresholded image to remove holes and small islands.
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
 
-                opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel, iterations=2)
+                opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel, iterations=1)
                 distance_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 3)
                 _, sure_foreground_image = cv2.threshold(distance_transform, 0.01 * distance_transform.max(), 255, 0)
                 sure_foreground_image = np.uint8(sure_foreground_image)

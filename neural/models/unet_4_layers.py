@@ -28,6 +28,7 @@ def build_model(img_width, img_height, channels_number, start_neurons=16):
     model = Model(inputs=[inputs], outputs=[outputs])
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.summary()
 
     print("[LOG] U-net model built.")
     return model

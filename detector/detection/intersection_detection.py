@@ -50,8 +50,7 @@ class IntersectionDetector:
         num_clusters = len(self.segments)
         for cluster_index_i in range(num_clusters):
             for cluster_index_j in range(cluster_index_i + 1, num_clusters):
-                logging.debug("Detecting intersections between cluster {} and cluster {}".format(cluster_index_i,
-                                                                                                 cluster_index_j))
+                logging.debug(f"Detecting intersections between cluster {cluster_index_i} and cluster {cluster_index_j}")
                 self.__detect_intersections_between_clusters(cluster_index_i, cluster_index_j)
 
     def __detect_intersections_between_clusters(self, cluster_index_i: int, cluster_index_j: int) -> None:

@@ -147,3 +147,4 @@ data/*
 !data/plasma
 test_results/*
 photos/
+detector/configs/models

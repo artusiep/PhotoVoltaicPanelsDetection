@@ -1,9 +1,10 @@
 import tensorflow as tf
+from keras.callbacks import TensorBoard
 
 from trainer.utils.paths_definition import get_logs_dir
 
 
-def get_callbacks(model_save_path):
+def get_callbacks(model_save_path, batch_size):
     checkpoint_path = model_save_path
 
     # Create a callback that saves the model's weights
@@ -15,6 +16,6 @@ def get_callbacks(model_save_path):
 
     return [
         tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5),
-        tf.keras.callbacks.TensorBoard(log_dir=get_logs_dir()),
-        cp_callback
+        tf.keras.callbacks.TensorBoard(log_dir=get_logs_dir(), batch_size=batch_size),
+        cp_callback,
     ]

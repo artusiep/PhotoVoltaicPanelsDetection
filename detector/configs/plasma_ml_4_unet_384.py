@@ -10,11 +10,14 @@ from detector.detection.preprocessing_ml import PreprocessingMlParams
 
 
 class PlasmaMl4Unet384Config(Config):
+    """
+    Download model weights: `gsutil -m cp gs://photo-voltaic-panels-detection/models/unet_4_gray_0.9617.zip models && unzip models/unet_4_gray_0.9617.zip models/`
+    """
     __preprocessing_image_scaling = 1
     __edge_image_scaling = 3
     preprocessing_params = PreprocessingMlParams(
         model_name='unet_4_layers',
-        weight_path='detector/configs/models/content/training_result/1_training_unet_4_layers_2021-10-17T23:28:47_gray/cp.ckpt',
+        weight_path='detector/configs/models/unet_4_gray_0.9617/cp.ckpt',
         gray=True,
         model_image_size=(384, 384),
         start_neurons=16,

@@ -9,9 +9,10 @@ from multiprocessing import Pool
 from detector.configs.abstract import Config
 from detector.detector import Detector
 from detector.extractor.extractor import ThermalImageExtractor
+from detector.extractor.extractor_2 import FastThermalImageExtractor
 from detector.labelers.abstract import RectangleLabeler
 from detector.logger import init_logger
-from detector.utils.cli import extant_file, dir_path
+from detector.utils.cli import extant_file, dir_path, dir_path_to_create
 from detector.utils.utils import save_img, available_color_maps
 
 RAW = 'raw'
@@ -104,12 +105,12 @@ def parse_arguments():
     process_group.add_argument('-c', '--config', choices=Config.get_all_subclass(), required=True, help=helps['config'])
     process_group.add_argument('-l', '--labelers', choices=RectangleLabeler.get_all_subclass(), nargs='+',
                                help=helps['labelers'], default=[])
-    process_group.add_argument('-o', '--output-dir', type=dir_path, required=True, help=helps['output-dir'])
+    process_group.add_argument('-o', '--output-dir', type=dir_path_to_create, required=True, help=helps['output-dir'])
     process_group.add_argument('--show-step-images', action='store_true', help=helps['show-step-images'])
 
     extract_group.add_argument('-cm', '--color-map', choices=available_color_maps(), default=['jet'],
                                nargs='+', metavar='', help=helps['color-map'])
-    extract_group.add_argument('--thermal-image-output', type=dir_path, help=helps['thermal-image-output'])
+    extract_group.add_argument('--thermal-image-output', type=dir_path_to_create, help=helps['thermal-image-output'])
 
     args = parser.parse_args()
 
@@ -120,26 +121,27 @@ def parse_arguments():
         files = args.files
     files = iter(files)
 
-    if args.type == RAW:
-        thermal_files = (
-            ThermalImageExtractor.get_thermal_image_file_path(
-                file,
-                args.color_map,
-                args.thermal_image_output
-            ) for file in files)
-        files = thermal_files
-    else:
-        files = (files,)
+    with FastThermalImageExtractor() as extractor:
+        if args.type == RAW:
+            thermal_files = (
+                extractor.get_thermal_image_file_path(
+                    file,
+                    args.color_map,
+                    args.thermal_image_output
+                ) for file in files)
+            files = thermal_files
+        else:
+            files = (files,)
 
-    process(
-        multithread=args.multithread,
-        file_paths=files,
-        config=Config.get_subclass_by_name(args.config),
-        silent=not args.show_step_images,
-        labelers=[RectangleLabeler.get_subclass_by_name(labeler) for labeler in args.labelers],
-        output_dir=args.output_dir
-    )
-    return args
+        process(
+            multithread=args.multithread,
+            file_paths=files,
+            config=Config.get_subclass_by_name(args.config),
+            silent=not args.show_step_images,
+            labelers=[RectangleLabeler.get_subclass_by_name(labeler) for labeler in args.labelers],
+            output_dir=args.output_dir
+        )
+        return args
 
 
 if __name__ == '__main__':
