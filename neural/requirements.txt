@@ -23,7 +23,7 @@ labelme==4.5.13
 Markdown==3.3.4
 matplotlib==3.4.3
 networkx==2.6.3
-numpy==1.19.5
+numpy==1.22.0
 oauthlib==3.1.1
 opencv-python-headless==4.5.3.56
 opt-einsum==3.3.0
