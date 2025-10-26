@@ -57,6 +57,6 @@ termcolor==1.1.0
 threadpoolctl==3.0.0
 tifffile==2021.8.30
 typing-extensions==3.7.4.3
-urllib3==1.26.7
+urllib3==2.5.0
 Werkzeug==2.0.2
 wrapt==1.12.1
