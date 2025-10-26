@@ -150,7 +150,7 @@ class Preprocessor:
                 for contour in contours:
                     mask = np.zeros_like(self.scaled_image_gray)
                     cv2.drawContours(mask, [contour], 0, (255), cv2.FILLED)
-                    mask = mask.astype(np.float) / 255.
+                    mask = mask.astype(float) / 255.
                     result = self.scaled_image_rgb[:, :, 2] * mask
                     red_channel = np.ma.masked_equal(result, 0)
                     v = np.ma.average(np.ma.masked_equal(red_channel, 0))
@@ -164,7 +164,7 @@ class Preprocessor:
                 mask = cv2.dilate(mask, kernel, iterations=4)
                 self.mask = mask
                 mask = cv2.blur(mask, (25, 25))
-                mask = mask.astype(np.float) / 255.
+                mask = mask.astype(float) / 255.
                 self.preprocessed_image = (background_removed_image * mask).astype(np.uint8)
                 mask = (mask * 255).astype(np.uint8)
 

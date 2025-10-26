@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from cv2 import cv2
+import cv2
 
 from detector.logger import init_logger
 from detector.utils.display import display_image_in_actual_size

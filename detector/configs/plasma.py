@@ -1,7 +1,7 @@
 from math import floor
 
 import numpy as np
-from cv2 import cv2
+import cv2
 
 from detector.configs.abstract import Config
 from detector.detection import PreprocessingParams, EdgeDetectorParams, SegmentDetectorParams, SegmentClustererParams, \

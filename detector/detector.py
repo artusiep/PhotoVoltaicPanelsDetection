@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Tuple, Any, Type, List
 
 import numpy as np
-from cv2 import cv2
+import cv2
 from matplotlib import pyplot
 
 from detector.configs.abstract import Config

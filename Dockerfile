@@ -1,4 +1,4 @@
-FROM python:3.9.7-slim
+FROM python:3.12.6-slim
 
 WORKDIR /usr/app
 
@@ -9,7 +9,7 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-ENV TF_CPP_MIN_LOG_LEVEL 3
+ENV TF_CPP_MIN_LOG_LEVEL=3
 
 COPY .dockerignore .
 COPY detector_cli.py .

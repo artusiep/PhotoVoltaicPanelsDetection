@@ -113,10 +113,15 @@ class SegmentClusterer:
         elif self.params.use_centers:
             features = centers
         elif self.params.centroids:
-            features = np.asarray(centroids_distance)
+                features = np.asarray(centroids_distance)
         else:
             raise RuntimeError("Can not perform segment clustering without any feature. "
                                "Select 'use_angles=True' and/or 'use_centers=True'.")
+
+        # If no features are available (empty array), return empty results
+        if len(features) == 0 or (hasattr(features, 'shape') and features.shape[0] == 0):
+            logging.warning("No features available for clustering. No segments were detected.")
+            return []
 
         cluster_prediction = None
 
@@ -127,7 +132,7 @@ class SegmentClusterer:
         elif self.params.cluster_type == "gmm":
             logging.debug("Clustering segments using GMM")
             best_gmm = None
-            lowest_bic = np.infty
+            lowest_bic = np.inf
             bic = []
             n_components_range = range(1, self.params.num_clusters + 1)
             if not self.params.swipe_clusters:
