@@ -16,7 +16,7 @@ idna==3.3
 imageio==2.9.0
 imgviz==1.4.0
 joblib==1.2.0
-keras==2.6.0
+keras==3.11.3
 Keras-Preprocessing==1.1.2
 kiwisolver==1.3.2
 labelme==4.5.13
