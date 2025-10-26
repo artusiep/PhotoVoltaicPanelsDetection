@@ -1,7 +1,7 @@
 absl-py==0.14.1
 astunparse==1.6.3
 cachetools==4.2.4
-certifi==2021.10.8
+certifi==2024.7.4
 charset-normalizer==2.0.7
 clang==5.0
 cycler==0.10.0
